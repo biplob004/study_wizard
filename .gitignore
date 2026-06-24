@@ -1,0 +1,24 @@
+# Python
+backend/.venv/
+__pycache__/
+*.pyc
+backend/.env
+
+# SQLite database (accounts + progress) — created at runtime, not committed
+backend/data/app.db
+backend/data/*.db
+backend/data/*.db-journal
+backend/data/*.db-wal
+backend/data/*.db-shm
+
+# Node / Vite
+frontend/node_modules/
+frontend/dist/
+# frontend/.env holds only VITE_API_BASE (no secret) — kept in the repo as config.
+
+# Docker / root env (holds GOOGLE_API_KEY)
+.env
+
+# OS
+.DS_Store
+todo.txt

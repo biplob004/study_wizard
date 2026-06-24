@@ -1,0 +1,902 @@
+[
+  {
+    "id": "running",
+    "word": "running",
+    "sentence": "The boy is running.",
+    "category": "action",
+    "image": "running.png",
+    "imagePrompt": "Young boy running fast across a sunny park, full body in motion, arms pumping, one foot lifted mid-stride, bright natural daylight, green grass, soft blurred trees in the background, photorealistic.",
+    "altWords": ["run", "jogging", "jog"]
+  },
+  {
+    "id": "walking",
+    "word": "walking",
+    "sentence": "The man is walking.",
+    "category": "action",
+    "image": "walking.png",
+    "imagePrompt": "Adult man walking calmly along a tree-lined sidewalk, full body visible, one leg stepping forward, relaxed posture, daylight, soft urban park background, photorealistic.",
+    "altWords": ["walk"]
+  },
+  {
+    "id": "eating",
+    "word": "eating",
+    "sentence": "The child is eating.",
+    "category": "action",
+    "image": "eating.png",
+    "imagePrompt": "Young child eating a meal at a small table, spoon raised near mouth, clear action, bright kitchen light, simple clean home background, photorealistic.",
+    "altWords": ["eat"]
+  },
+  {
+    "id": "drinking",
+    "word": "drinking",
+    "sentence": "The man is drinking.",
+    "category": "action",
+    "image": "drinking.png",
+    "imagePrompt": "Adult man drinking a glass of water, glass held near mouth, clear action, bright indoor daylight, simple clean background, photorealistic.",
+    "altWords": ["drink"]
+  },
+  {
+    "id": "sleeping",
+    "word": "sleeping",
+    "sentence": "The baby is sleeping.",
+    "category": "action",
+    "image": "sleeping.png",
+    "imagePrompt": "Sleeping baby resting peacefully in a crib, eyes closed, wrapped in a soft blanket, gentle warm lighting, calm bedroom background, photorealistic.",
+    "altWords": ["sleep", "asleep"]
+  },
+  {
+    "id": "cooking",
+    "word": "cooking",
+    "sentence": "The woman is cooking.",
+    "category": "action",
+    "image": "cooking.png",
+    "imagePrompt": "Woman cooking at a kitchen stove, stirring food in a pan, warm home kitchen lighting, ingredients nearby, clear cooking action, photorealistic.",
+    "altWords": ["cook"]
+  },
+  {
+    "id": "reading",
+    "word": "reading",
+    "sentence": "The boy is reading.",
+    "category": "action",
+    "image": "reading.png",
+    "imagePrompt": "Young boy sitting and reading an open book carefully, focused expression, cozy natural light, simple classroom or home reading corner, photorealistic.",
+    "altWords": ["read"]
+  },
+  {
+    "id": "writing",
+    "word": "writing",
+    "sentence": "The student is writing.",
+    "category": "action",
+    "image": "writing.png",
+    "imagePrompt": "Student writing with a pencil on paper at a desk, hand clearly in action, attentive posture, soft classroom light, tidy background, photorealistic.",
+    "altWords": ["write"]
+  },
+  {
+    "id": "talking",
+    "word": "talking",
+    "sentence": "They are talking.",
+    "category": "action",
+    "image": "talking.png",
+    "imagePrompt": "Two people standing face to face and talking, natural conversational gestures, friendly expressions, outdoor daytime setting, softly blurred park background, photorealistic.",
+    "altWords": ["talk", "speaking", "speak"]
+  },
+  {
+    "id": "listening",
+    "word": "listening",
+    "sentence": "The girl is listening to music.",
+    "category": "action",
+    "image": "listening.png",
+    "imagePrompt": "Young girl wearing headphones and listening to music, calm focused expression, eyes gently closed, soft indoor lighting, simple clean background, photorealistic.",
+    "altWords": ["listen"]
+  },
+  {
+    "id": "jumping",
+    "word": "jumping",
+    "sentence": "The kid is jumping.",
+    "category": "action",
+    "image": "jumping.png",
+    "imagePrompt": "Energetic child jumping high in the air on a grassy playground, full body visible, knees bent, arms lifted, bright daylight, cheerful outdoor background, photorealistic.",
+    "altWords": ["jump", "hop"]
+  },
+  {
+    "id": "swimming",
+    "word": "swimming",
+    "sentence": "The girl is swimming.",
+    "category": "action",
+    "image": "swimming.png",
+    "imagePrompt": "Young girl swimming in a clear blue pool, upper body and arms visible in motion, sparkling water, bright outdoor light, clean aquatic setting, photorealistic.",
+    "altWords": ["swim"]
+  },
+  {
+    "id": "dancing",
+    "word": "dancing",
+    "sentence": "The girl is dancing.",
+    "category": "action",
+    "image": "dancing.png",
+    "imagePrompt": "Young girl dancing joyfully in an open studio, full body pose, flowing movement, expressive arms, warm natural light, clean wooden floor, soft neutral background, photorealistic.",
+    "altWords": ["dance"]
+  },
+  {
+    "id": "singing",
+    "word": "singing",
+    "sentence": "The girl is singing.",
+    "category": "action",
+    "image": "singing.png",
+    "imagePrompt": "Young girl singing into a microphone, expressive face, open mouth mid-song, stage or studio lighting, simple background, photorealistic.",
+    "altWords": ["sing"]
+  },
+  {
+    "id": "laughing",
+    "word": "laughing",
+    "sentence": "The boy is laughing.",
+    "category": "action",
+    "image": "laughing.png",
+    "imagePrompt": "Young boy laughing happily, bright smile, lively face, natural daylight, simple outdoor park background, photorealistic.",
+    "altWords": ["laugh"]
+  },
+  {
+    "id": "sitting",
+    "word": "sitting",
+    "sentence": "The man is sitting on a chair.",
+    "category": "action",
+    "image": "sitting.png",
+    "imagePrompt": "Adult man sitting calmly on a wooden chair, full body visible, relaxed upright posture, soft natural light, simple clean room background, photorealistic.",
+    "altWords": ["sit"]
+  },
+  {
+    "id": "standing",
+    "word": "standing",
+    "sentence": "The woman is standing.",
+    "category": "action",
+    "image": "standing.png",
+    "imagePrompt": "Adult woman standing straight with relaxed arms, full body visible, neutral pose, soft daylight, simple clean background, photorealistic.",
+    "altWords": ["stand"]
+  },
+  {
+    "id": "playing",
+    "word": "playing",
+    "sentence": "The children are playing.",
+    "category": "action",
+    "image": "playing.png",
+    "imagePrompt": "Happy children playing together outdoors with a ball, full bodies in motion, joyful expressions, bright daylight, green park background, photorealistic.",
+    "altWords": ["play"]
+  },
+  {
+    "id": "happy",
+    "word": "happy",
+    "sentence": "She is happy.",
+    "category": "emotion",
+    "image": "happy.png",
+    "imagePrompt": "Close-up portrait of a happy woman smiling warmly, bright eyes, soft daylight, simple clean background, photorealistic.",
+    "altWords": ["glad", "joyful"]
+  },
+  {
+    "id": "sad",
+    "word": "sad",
+    "sentence": "She is sad.",
+    "category": "emotion",
+    "image": "sad.png",
+    "imagePrompt": "Close-up portrait of a woman looking sad, gentle frown, watery eyes, soft lighting, plain background, photorealistic.",
+    "altWords": ["unhappy"]
+  },
+  {
+    "id": "angry",
+    "word": "angry",
+    "sentence": "He is angry.",
+    "category": "emotion",
+    "image": "angry.png",
+    "imagePrompt": "Close-up portrait of a man with an angry expression, furrowed brows, tense mouth, direct gaze, soft neutral background, photorealistic.",
+    "altWords": ["mad", "furious"]
+  },
+  {
+    "id": "scared",
+    "word": "scared",
+    "sentence": "The boy is scared.",
+    "category": "emotion",
+    "image": "scared.png",
+    "imagePrompt": "Close-up portrait of a scared boy, wide eyes, tense expression, slightly raised shoulders, soft dim background, photorealistic.",
+    "altWords": ["afraid", "frightened"]
+  },
+  {
+    "id": "tired",
+    "word": "tired",
+    "sentence": "He is tired.",
+    "category": "emotion",
+    "image": "tired.png",
+    "imagePrompt": "Close-up portrait of a tired man, drooping eyelids, slightly slouched posture, calm muted background, soft lighting, photorealistic.",
+    "altWords": ["sleepy", "exhausted"]
+  },
+  {
+    "id": "surprised",
+    "word": "surprised",
+    "sentence": "She is surprised.",
+    "category": "emotion",
+    "image": "surprised.png",
+    "imagePrompt": "Close-up portrait of a surprised woman, wide eyes, raised eyebrows, slightly open mouth, simple background, photorealistic.",
+    "altWords": ["shocked", "amazed"]
+  },
+  {
+    "id": "excited",
+    "word": "excited",
+    "sentence": "She is excited.",
+    "category": "emotion",
+    "image": "excited.png",
+    "imagePrompt": "Close-up portrait of an excited girl with a big smile, bright eyes, energetic expression, soft natural light, clean background, photorealistic.",
+    "altWords": ["thrilled"]
+  },
+  {
+    "id": "hungry",
+    "word": "hungry",
+    "sentence": "The boy is hungry.",
+    "category": "emotion",
+    "image": "hungry.png",
+    "imagePrompt": "Close-up portrait of a hungry boy looking eagerly at a plate of food, hand on stomach, expressive face, warm kitchen lighting, simple background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "dog",
+    "word": "dog",
+    "sentence": "The dog is barking.",
+    "category": "animal",
+    "image": "dog.png",
+    "imagePrompt": "Friendly brown dog with mouth open as if barking, centered subject, plain soft background, clear fur detail, photorealistic.",
+    "altWords": ["puppy"]
+  },
+  {
+    "id": "cat",
+    "word": "cat",
+    "sentence": "The cat is small.",
+    "category": "animal",
+    "image": "cat.png",
+    "imagePrompt": "Small domestic cat sitting and looking at the camera, centered subject, soft light background, detailed fur, photorealistic.",
+    "altWords": ["kitten"]
+  },
+  {
+    "id": "bird",
+    "word": "bird",
+    "sentence": "The bird is flying.",
+    "category": "animal",
+    "image": "bird.png",
+    "imagePrompt": "Colorful bird in mid-flight with wings fully spread, clean sky background, sharp feather detail, centered composition, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "fish",
+    "word": "fish",
+    "sentence": "The fish is swimming.",
+    "category": "animal",
+    "image": "fish.png",
+    "imagePrompt": "Single bright fish swimming in clear blue water, centered subject, visible fins and scales, soft underwater light, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "horse",
+    "word": "horse",
+    "sentence": "The horse is running.",
+    "category": "animal",
+    "image": "horse.png",
+    "imagePrompt": "Strong horse running across an open field, full body in motion, wind in mane, golden daylight, natural background, photorealistic.",
+    "altWords": ["pony"]
+  },
+  {
+    "id": "cow",
+    "word": "cow",
+    "sentence": "The cow is in the field.",
+    "category": "animal",
+    "image": "cow.png",
+    "imagePrompt": "Black and white dairy cow standing in a green grassy field, full body visible, centered subject, bright daylight, simple farm background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "chicken",
+    "word": "chicken",
+    "sentence": "The chicken is white.",
+    "category": "animal",
+    "image": "chicken.png",
+    "imagePrompt": "Single chicken standing on the ground in a farmyard, full body visible, detailed feathers, soft daylight, simple natural background, photorealistic.",
+    "altWords": ["hen"]
+  },
+  {
+    "id": "sheep",
+    "word": "sheep",
+    "sentence": "The sheep is soft.",
+    "category": "animal",
+    "image": "sheep.png",
+    "imagePrompt": "Fluffy white sheep standing in a green meadow, full body visible, thick woolly coat, soft daylight, simple natural background, photorealistic.",
+    "altWords": ["lamb"]
+  },
+  {
+    "id": "rabbit",
+    "word": "rabbit",
+    "sentence": "The rabbit is hopping.",
+    "category": "animal",
+    "image": "rabbit.png",
+    "imagePrompt": "Cute rabbit in a grassy field, captured mid-hop, soft fur detail, bright daylight, simple natural background, photorealistic.",
+    "altWords": ["bunny"]
+  },
+  {
+    "id": "elephant",
+    "word": "elephant",
+    "sentence": "The elephant is big.",
+    "category": "animal",
+    "image": "elephant.png",
+    "imagePrompt": "Large elephant standing clearly in an open natural landscape, centered subject, detailed skin texture, warm daylight, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "apple",
+    "word": "apple",
+    "sentence": "The apple is red.",
+    "category": "food",
+    "image": "apple.png",
+    "imagePrompt": "Single red apple centered on a clean light background, glossy skin, soft studio lighting, crisp detail, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "banana",
+    "word": "banana",
+    "sentence": "The banana is yellow.",
+    "category": "food",
+    "image": "banana.png",
+    "imagePrompt": "Single ripe yellow banana on a simple clean background, centered composition, soft studio lighting, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "orange",
+    "word": "orange",
+    "sentence": "The orange is sweet.",
+    "category": "food",
+    "image": "orange.png",
+    "imagePrompt": "Single fresh orange fruit centered on a clean light background, textured peel, soft studio lighting, crisp detail, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "bread",
+    "word": "bread",
+    "sentence": "The bread is fresh.",
+    "category": "food",
+    "image": "bread.png",
+    "imagePrompt": "Fresh loaf of bread on a wooden surface, crisp golden crust, warm soft light, simple bakery-style background, photorealistic.",
+    "altWords": ["loaf"]
+  },
+  {
+    "id": "rice",
+    "word": "rice",
+    "sentence": "The rice is hot.",
+    "category": "food",
+    "image": "rice.png",
+    "imagePrompt": "Bowl of steaming white cooked rice on a clean table, centered subject, soft natural light, minimal background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "egg",
+    "word": "egg",
+    "sentence": "The egg is white.",
+    "category": "food",
+    "image": "egg.png",
+    "imagePrompt": "Single white egg centered on a clean neutral background, soft studio light, simple composition, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "milk",
+    "word": "milk",
+    "sentence": "The milk is cold.",
+    "category": "food",
+    "image": "milk.png",
+    "imagePrompt": "Clear glass of cold milk on a clean surface, centered subject, bright soft lighting, minimal background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "water",
+    "word": "water",
+    "sentence": "The water is clean.",
+    "category": "food",
+    "image": "water.png",
+    "imagePrompt": "Clear glass of fresh water on a clean table, centered subject, bright soft lighting, water droplets on the glass, minimal background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "meat",
+    "word": "meat",
+    "sentence": "The meat is cooked.",
+    "category": "food",
+    "image": "meat.png",
+    "imagePrompt": "Cooked piece of meat on a white plate, juicy grilled surface, warm appetizing lighting, simple clean background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "cheese",
+    "word": "cheese",
+    "sentence": "The cheese is yellow.",
+    "category": "food",
+    "image": "cheese.png",
+    "imagePrompt": "Wedge of yellow cheese on a wooden board, clear texture, warm soft lighting, simple clean background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "coffee",
+    "word": "coffee",
+    "sentence": "The coffee is hot.",
+    "category": "food",
+    "image": "coffee.png",
+    "imagePrompt": "Cup of hot coffee with light steam rising, on a clean table, centered subject, warm soft lighting, minimal background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "tea",
+    "word": "tea",
+    "sentence": "The tea is warm.",
+    "category": "food",
+    "image": "tea.png",
+    "imagePrompt": "Cup of warm tea with gentle steam, on a clean table, centered subject, soft natural light, minimal background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "book",
+    "word": "book",
+    "sentence": "The book is open.",
+    "category": "object",
+    "image": "book.png",
+    "imagePrompt": "Open book resting on a simple table, pages visible, clean soft background, natural light, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "chair",
+    "word": "chair",
+    "sentence": "The chair is empty.",
+    "category": "object",
+    "image": "chair.png",
+    "imagePrompt": "Single wooden chair centered in a simple room, empty seat clearly visible, soft daylight, clean background, photorealistic.",
+    "altWords": ["seat"]
+  },
+  {
+    "id": "table",
+    "word": "table",
+    "sentence": "The table is wooden.",
+    "category": "object",
+    "image": "table.png",
+    "imagePrompt": "Simple wooden table centered in a clean bright room, clear shape and surface, soft daylight, plain background, photorealistic.",
+    "altWords": ["desk"]
+  },
+  {
+    "id": "bed",
+    "word": "bed",
+    "sentence": "The bed is soft.",
+    "category": "object",
+    "image": "bed.png",
+    "imagePrompt": "Neatly made bed with soft pillows and blanket in a tidy bedroom, centered subject, warm natural light, clean background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "door",
+    "word": "door",
+    "sentence": "The door is open.",
+    "category": "object",
+    "image": "door.png",
+    "imagePrompt": "Single wooden door slightly open in a clean wall, centered composition, soft daylight, simple background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "window",
+    "word": "window",
+    "sentence": "The window is clean.",
+    "category": "object",
+    "image": "window.png",
+    "imagePrompt": "Clean glass window on a bright wall with daylight coming through, centered composition, simple interior background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "key",
+    "word": "key",
+    "sentence": "The key is small.",
+    "category": "object",
+    "image": "key.png",
+    "imagePrompt": "Single metal key centered on a plain clean surface, sharp detail, soft studio lighting, minimal background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "phone",
+    "word": "phone",
+    "sentence": "The phone is new.",
+    "category": "object",
+    "image": "phone.png",
+    "imagePrompt": "Modern smartphone lying on a clean table, screen facing up, centered subject, soft studio lighting, minimal background, photorealistic.",
+    "altWords": ["mobile", "smartphone", "cellphone"]
+  },
+  {
+    "id": "computer",
+    "word": "computer",
+    "sentence": "The computer is on.",
+    "category": "object",
+    "image": "computer.png",
+    "imagePrompt": "Laptop computer open on a clean desk, screen glowing softly, centered subject, soft daylight, tidy minimal background, photorealistic.",
+    "altWords": ["laptop"]
+  },
+  {
+    "id": "clock",
+    "word": "clock",
+    "sentence": "The clock is round.",
+    "category": "object",
+    "image": "clock.png",
+    "imagePrompt": "Round wall clock centered against a simple light wall, clear shape, clean design, soft even lighting, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "cup",
+    "word": "cup",
+    "sentence": "The cup is full.",
+    "category": "object",
+    "image": "cup.png",
+    "imagePrompt": "Simple cup filled with a drink, centered on a clean table, soft natural light, minimal background, photorealistic.",
+    "altWords": ["mug"]
+  },
+  {
+    "id": "plate",
+    "word": "plate",
+    "sentence": "The plate is empty.",
+    "category": "object",
+    "image": "plate.png",
+    "imagePrompt": "Single clean white plate centered on a simple table, soft studio lighting, minimal background, photorealistic.",
+    "altWords": ["dish"]
+  },
+  {
+    "id": "head",
+    "word": "head",
+    "sentence": "She touches her head.",
+    "category": "body",
+    "image": "head.png",
+    "imagePrompt": "Clear front portrait of a person's head and face, neutral expression, soft even lighting, plain background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "hand",
+    "word": "hand",
+    "sentence": "He raises his hand.",
+    "category": "body",
+    "image": "hand.png",
+    "imagePrompt": "Single open human hand with palm facing the camera, fingers spread, clear detail, soft lighting, plain background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "eye",
+    "word": "eye",
+    "sentence": "The eye is brown.",
+    "category": "body",
+    "image": "eye.png",
+    "imagePrompt": "Extreme close-up of a single human eye, detailed iris and eyelashes, soft natural light, clean focus, photorealistic.",
+    "altWords": ["eyes"]
+  },
+  {
+    "id": "ear",
+    "word": "ear",
+    "sentence": "The ear is small.",
+    "category": "body",
+    "image": "ear.png",
+    "imagePrompt": "Close-up of a single human ear in profile, clear detail, soft natural light, plain background, photorealistic.",
+    "altWords": ["ears"]
+  },
+  {
+    "id": "nose",
+    "word": "nose",
+    "sentence": "She points to her nose.",
+    "category": "body",
+    "image": "nose.png",
+    "imagePrompt": "Close-up of a human nose on a face, clear central detail, soft even lighting, plain background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "mouth",
+    "word": "mouth",
+    "sentence": "The mouth is open.",
+    "category": "body",
+    "image": "mouth.png",
+    "imagePrompt": "Close-up of a human mouth with lips slightly open showing teeth, clear detail, soft even lighting, plain background, photorealistic.",
+    "altWords": ["lips"]
+  },
+  {
+    "id": "foot",
+    "word": "foot",
+    "sentence": "The foot is bare.",
+    "category": "body",
+    "image": "foot.png",
+    "imagePrompt": "Single bare human foot on a clean light floor, clear detail, soft natural light, plain background, photorealistic.",
+    "altWords": ["feet"]
+  },
+  {
+    "id": "hair",
+    "word": "hair",
+    "sentence": "Her hair is long.",
+    "category": "body",
+    "image": "hair.png",
+    "imagePrompt": "Close-up of a woman's long flowing hair, soft texture and shine, gentle natural light, plain background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "shirt",
+    "word": "shirt",
+    "sentence": "The shirt is blue.",
+    "category": "clothing",
+    "image": "shirt.png",
+    "imagePrompt": "Single folded blue shirt centered on a clean surface, clear fabric detail, soft studio lighting, minimal background, photorealistic.",
+    "altWords": ["top"]
+  },
+  {
+    "id": "shoes",
+    "word": "shoes",
+    "sentence": "The shoes are new.",
+    "category": "clothing",
+    "image": "shoes.png",
+    "imagePrompt": "Pair of clean casual shoes placed side by side on a plain surface, centered composition, soft studio lighting, minimal background, photorealistic.",
+    "altWords": ["shoe", "sneakers"]
+  },
+  {
+    "id": "hat",
+    "word": "hat",
+    "sentence": "The hat is black.",
+    "category": "clothing",
+    "image": "hat.png",
+    "imagePrompt": "Single stylish hat centered on a clean surface, clear shape and texture, soft studio lighting, minimal background, photorealistic.",
+    "altWords": ["cap"]
+  },
+  {
+    "id": "dress",
+    "word": "dress",
+    "sentence": "The dress is red.",
+    "category": "clothing",
+    "image": "dress.png",
+    "imagePrompt": "Elegant red dress displayed on a simple mannequin, full garment visible, soft studio lighting, clean plain background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "pants",
+    "word": "pants",
+    "sentence": "The pants are long.",
+    "category": "clothing",
+    "image": "pants.png",
+    "imagePrompt": "Pair of folded casual pants centered on a clean surface, clear fabric detail, soft studio lighting, minimal background, photorealistic.",
+    "altWords": ["trousers", "jeans"]
+  },
+  {
+    "id": "jacket",
+    "word": "jacket",
+    "sentence": "The jacket is warm.",
+    "category": "clothing",
+    "image": "jacket.png",
+    "imagePrompt": "Single warm jacket displayed on a hanger, full garment visible, soft studio lighting, clean plain background, photorealistic.",
+    "altWords": ["coat"]
+  },
+  {
+    "id": "sun",
+    "word": "sun",
+    "sentence": "The sun is bright.",
+    "category": "nature",
+    "image": "sun.png",
+    "imagePrompt": "Bright sun shining in a clear blue sky, warm radiant light, soft glow, simple sky background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "moon",
+    "word": "moon",
+    "sentence": "The moon is full.",
+    "category": "nature",
+    "image": "moon.png",
+    "imagePrompt": "Full bright moon in a dark night sky, detailed surface craters, soft glow, simple dark background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "tree",
+    "word": "tree",
+    "sentence": "The tree is tall.",
+    "category": "nature",
+    "image": "tree.png",
+    "imagePrompt": "Single tall green tree standing alone in an open field, full shape visible, bright daylight, clear blue sky background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "flower",
+    "word": "flower",
+    "sentence": "The flower is pretty.",
+    "category": "nature",
+    "image": "flower.png",
+    "imagePrompt": "Single colorful flower in full bloom, centered subject, detailed petals, soft natural light, gentle blurred green background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "rain",
+    "word": "rain",
+    "sentence": "The rain is falling.",
+    "category": "nature",
+    "image": "rain.png",
+    "imagePrompt": "Heavy rain falling with visible raindrops and splashes on the ground, grey cloudy sky, soft diffuse light, simple background, photorealistic.",
+    "altWords": ["raining"]
+  },
+  {
+    "id": "snow",
+    "word": "snow",
+    "sentence": "The snow is white.",
+    "category": "nature",
+    "image": "snow.png",
+    "imagePrompt": "Soft white snow covering the ground with falling snowflakes, calm winter scene, cool soft daylight, simple background, photorealistic.",
+    "altWords": ["snowing"]
+  },
+  {
+    "id": "star",
+    "word": "star",
+    "sentence": "The star is bright.",
+    "category": "nature",
+    "image": "star.png",
+    "imagePrompt": "Single bright shining star in a dark night sky, soft glowing light rays, simple dark background, photorealistic.",
+    "altWords": ["stars"]
+  },
+  {
+    "id": "cloud",
+    "word": "cloud",
+    "sentence": "The cloud is white.",
+    "category": "nature",
+    "image": "cloud.png",
+    "imagePrompt": "Single fluffy white cloud in a clear blue sky, soft edges, bright daylight, simple sky background, photorealistic.",
+    "altWords": ["clouds"]
+  },
+  {
+    "id": "house",
+    "word": "house",
+    "sentence": "The house is big.",
+    "category": "place",
+    "image": "house.png",
+    "imagePrompt": "Single family house with a roof and front door, full building visible, bright daylight, clean simple background, photorealistic.",
+    "altWords": ["home"]
+  },
+  {
+    "id": "school",
+    "word": "school",
+    "sentence": "The school is open.",
+    "category": "place",
+    "image": "school.png",
+    "imagePrompt": "Front view of a school building with large entrance and windows, full building visible, bright daylight, simple background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "hospital",
+    "word": "hospital",
+    "sentence": "The hospital is near.",
+    "category": "place",
+    "image": "hospital.png",
+    "imagePrompt": "Front view of a modern hospital building with a clear entrance, full building visible, bright daylight, simple background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "store",
+    "word": "store",
+    "sentence": "The store is busy.",
+    "category": "place",
+    "image": "store.png",
+    "imagePrompt": "Front view of a small shop store with a display window and entrance, full building visible, bright daylight, simple street background, photorealistic.",
+    "altWords": ["shop"]
+  },
+  {
+    "id": "park",
+    "word": "park",
+    "sentence": "The park is green.",
+    "category": "place",
+    "image": "park.png",
+    "imagePrompt": "Green public park with grass, trees, and a path, open peaceful scene, bright daylight, simple natural background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "beach",
+    "word": "beach",
+    "sentence": "The beach is sandy.",
+    "category": "place",
+    "image": "beach.png",
+    "imagePrompt": "Sandy beach with gentle ocean waves and clear blue sky, calm open scene, bright sunlight, simple background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "road",
+    "word": "road",
+    "sentence": "The road is long.",
+    "category": "place",
+    "image": "road.png",
+    "imagePrompt": "Long empty road stretching into the distance, clear lane markings, open landscape on both sides, bright daylight, photorealistic.",
+    "altWords": ["street"]
+  },
+  {
+    "id": "mother",
+    "word": "mother",
+    "sentence": "My mother is kind.",
+    "category": "people",
+    "image": "mother.png",
+    "imagePrompt": "Warm portrait of a smiling mother holding her young child, gentle affectionate expression, soft natural light, simple home background, photorealistic.",
+    "altWords": ["mom", "mum"]
+  },
+  {
+    "id": "father",
+    "word": "father",
+    "sentence": "My father is tall.",
+    "category": "people",
+    "image": "father.png",
+    "imagePrompt": "Warm portrait of a smiling father standing with his child, friendly caring expression, soft natural light, simple home background, photorealistic.",
+    "altWords": ["dad"]
+  },
+  {
+    "id": "baby",
+    "word": "baby",
+    "sentence": "The baby is small.",
+    "category": "people",
+    "image": "baby.png",
+    "imagePrompt": "Adorable smiling baby sitting up, bright happy expression, soft warm lighting, simple clean background, photorealistic.",
+    "altWords": ["infant"]
+  },
+  {
+    "id": "child",
+    "word": "child",
+    "sentence": "The child is happy.",
+    "category": "people",
+    "image": "child.png",
+    "imagePrompt": "Happy young child standing and smiling, full body visible, casual clothes, bright daylight, simple clean background, photorealistic.",
+    "altWords": ["kid"]
+  },
+  {
+    "id": "friend",
+    "word": "friend",
+    "sentence": "She is my friend.",
+    "category": "people",
+    "image": "friend.png",
+    "imagePrompt": "Two smiling friends standing side by side with arms around shoulders, friendly happy expressions, bright daylight, simple background, photorealistic.",
+    "altWords": ["friends"]
+  },
+  {
+    "id": "teacher",
+    "word": "teacher",
+    "sentence": "The teacher is helpful.",
+    "category": "people",
+    "image": "teacher.png",
+    "imagePrompt": "Friendly teacher standing beside a whiteboard in a classroom, warm smile, holding a book, bright classroom light, simple background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "car",
+    "word": "car",
+    "sentence": "The car is fast.",
+    "category": "transport",
+    "image": "car.png",
+    "imagePrompt": "Modern car parked at a slight angle, centered subject, clean outdoor background, glossy finish, bright daylight, photorealistic.",
+    "altWords": ["automobile"]
+  },
+  {
+    "id": "bus",
+    "word": "bus",
+    "sentence": "The bus is yellow.",
+    "category": "transport",
+    "image": "bus.png",
+    "imagePrompt": "Yellow city bus parked on a street, full vehicle visible at a slight angle, bright daylight, clean simple background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "train",
+    "word": "train",
+    "sentence": "The train is long.",
+    "category": "transport",
+    "image": "train.png",
+    "imagePrompt": "Modern train on railway tracks, front and side visible at an angle, bright daylight, simple clean background, photorealistic.",
+    "altWords": []
+  },
+  {
+    "id": "bicycle",
+    "word": "bicycle",
+    "sentence": "The bicycle is red.",
+    "category": "transport",
+    "image": "bicycle.png",
+    "imagePrompt": "Single red bicycle standing on its kickstand, full vehicle visible from the side, bright daylight, clean simple background, photorealistic.",
+    "altWords": ["bike"]
+  },
+  {
+    "id": "airplane",
+    "word": "airplane",
+    "sentence": "The airplane is flying.",
+    "category": "transport",
+    "image": "airplane.png",
+    "imagePrompt": "Passenger airplane flying in a clear blue sky, full aircraft visible at an angle, bright daylight, soft clouds in the background, photorealistic.",
+    "altWords": ["plane", "aeroplane"]
+  }
+]
