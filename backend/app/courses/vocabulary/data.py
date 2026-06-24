@@ -72,14 +72,18 @@ def load_raw() -> list[dict[str, Any]]:
     return valid
 
 
-def get_dataset(base_url: str) -> list[dict[str, Any]]:
-    """Return the dataset with media fields rewritten to full static URLs."""
-    base = base_url.rstrip("/")
+def get_dataset() -> list[dict[str, Any]]:
+    """Return the dataset with media fields rewritten to root-relative static URLs.
+
+    Root-relative (``/static/...``) rather than absolute so the browser fetches
+    media from whatever origin served the page — works for localhost, a LAN IP,
+    or behind the frontend's dev-server proxy, without baking in a host.
+    """
     dataset = []
     for entry in load_raw():
         item = dict(entry)
-        item["image"] = f"{base}/static/courses/vocabulary/images/{entry['id']}.{IMAGE_FORMAT}"
-        item["audio"] = f"{base}/static/courses/vocabulary/audio/{entry['id']}.{AUDIO_FORMAT}"
+        item["image"] = f"/static/courses/vocabulary/images/{entry['id']}.{IMAGE_FORMAT}"
+        item["audio"] = f"/static/courses/vocabulary/audio/{entry['id']}.{AUDIO_FORMAT}"
         dataset.append(item)
     return dataset
 

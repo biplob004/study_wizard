@@ -33,7 +33,7 @@ db.init_db()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):(5173|5174|5175)",
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):(5454|5173|5174|5175)",
     allow_methods=["*"],
     allow_headers=["*"],
 )

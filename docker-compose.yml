@@ -1,16 +1,16 @@
 # One command to bring the whole app up:  docker compose up --build
 #
-# - backend  → http://localhost:8000  (FastAPI; owns the data + LLM checks)
-# - frontend → http://localhost:5173  (Vite dev server; the React UI)
+# - backend  → http://localhost:8484  (FastAPI; owns the data + LLM checks)
+# - frontend → http://localhost:5454  (Vite dev server; the React UI)
 #
-# The browser (on your host) talks to the backend directly at localhost:8000, so
+# The browser (on your host) talks to the backend directly at localhost:8484, so
 # CORS and the absolute image URLs the backend builds keep working as-is.
 
 services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "8484:8000"
     environment:
       # Optional — only the two typed exercises use it. Without it they fall back
       # to tolerant string matching. Set it in a root .env file or your shell.
@@ -25,10 +25,10 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "5173:5173"
+      - "5454:5173"
     environment:
-      # The browser reaches the backend on the host's published port.
-      - VITE_API_BASE=http://localhost:8000
+      # Empty string = use Vite's proxy (/api and /static forwarded to backend container).
+      - VITE_API_BASE=
     volumes:
       # Live source for hot reload; keep the image's installed node_modules.
       - ./frontend:/app

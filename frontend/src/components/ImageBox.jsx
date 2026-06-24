@@ -18,6 +18,8 @@ export default function ImageBox({ src, alt, className = "" }) {
         <img
           src={src}
           alt={alt}
+          loading="lazy"
+          decoding="async"
           onError={() => setFailed(true)}
           className="h-full w-full object-contain"
         />

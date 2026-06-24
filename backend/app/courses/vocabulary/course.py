@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends
 
 from app import auth, db
 from app.courses import Course
@@ -61,9 +61,9 @@ class VocabularyCourse(Course):
         r = APIRouter(tags=["vocabulary"])
 
         @r.get("/content")
-        def content(request: Request) -> list[dict]:
-            """The vocabulary dataset with image/audio as full static URLs."""
-            return data.get_dataset(str(request.base_url))
+        def content() -> list[dict]:
+            """The vocabulary dataset with image/audio as root-relative static URLs."""
+            return data.get_dataset()
 
         @r.post("/check-answer", response_model=AnswerCheck)
         def check(req: CheckRequest) -> AnswerCheck:

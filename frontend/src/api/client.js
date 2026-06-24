@@ -2,7 +2,7 @@
 // dataset, the course catalog, judges free-text answers, and reads/writes the signed-in
 // learner's progress, all over HTTP.
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 const TOKEN_KEY = "edu.authToken";
 
 // --- Token storage ---------------------------------------------------------
