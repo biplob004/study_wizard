@@ -21,6 +21,24 @@ export function sample(array, n) {
 }
 
 /**
+ * Pick `n` distinct elements, weighted so higher-weight items are more likely.
+ * Uses the Efraimidis–Spirakis key: key = u^(1/w); pick the n largest keys.
+ * This is weighted sampling *without* replacement.
+ */
+export function weightedSample(array, n, weightOf) {
+  if (n <= 0 || array.length === 0) return [];
+  const keyed = array.map((item) => {
+    const w = weightOf(item);
+    const u = Math.random();
+    // Guard against w <= 0 (treat as tiny so it's almost never picked).
+    const key = w > 0 ? Math.pow(u, 1 / w) : 0;
+    return { item, key };
+  });
+  keyed.sort((a, b) => b.key - a.key);
+  return keyed.slice(0, Math.min(n, array.length)).map((k) => k.item);
+}
+
+/**
  * Pick `count` distractor items for a target, preferring the same category for
  * plausibility and topping up from the rest of the pool if needed.
  */

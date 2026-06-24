@@ -1,30 +1,59 @@
 // Orchestrates a Vocabulary Practice session: loads data from the backend,
 // serves random exercises, and tracks score/streak across a fixed number of rounds.
-import { useCallback, useEffect, useState } from "react";
-import { getVocabulary, recordPractice } from "../api/client";
-import { availableExercises } from "../exercises/registry";
-import { pickOne, sample } from "../lib/random";
-import SessionHeader from "../components/SessionHeader";
-import FeedbackBanner from "../components/FeedbackBanner";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { getCourseContent, getPracticeExposures, recordPractice } from "../../api/client";
+import { availableExercises } from "../../exercises/registry";
+import { pickOne, weightedSample } from "../../lib/random";
+import SessionHeader from "../../components/SessionHeader";
+import FeedbackBanner from "../../components/FeedbackBanner";
 
-const TOTAL_ROUNDS = 10;
+const COURSE_ID = "vocabulary";
+const TOTAL_ROUNDS = 15;
 
-export default function PracticeSession({ onFinish }) {
-  const [phase, setPhase] = useState("loading"); // loading | error | intro | playing | summary
+// Weight for an item given how many times it's been shown before. Less-exposed
+// items get a higher weight so sessions spread across the whole dataset.
+const EXPOSURE_DECAY = 0.5;
+const weightFor = (timesShown) => 1 / (1 + timesShown * EXPOSURE_DECAY);
+
+export default function Practice({ onFinish }) {
+  const [phase, setPhase] = useState("loading"); // loading | error | playing | summary
   const [pool, setPool] = useState([]);
   const [round, setRound] = useState(null); // { exercise, items, key }
   const [roundNo, setRoundNo] = useState(0);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
   const [feedback, setFeedback] = useState(null); // { correct, message }
+  // Exposure map (item_id -> times shown) and the set of items shown this session.
+  const exposuresRef = useRef({});
+  const shownRef = useRef(new Set());
+
+  // Build a sampler that down-weights previously-asked items but still allows
+  // repeats when the pool is small or an item's needs can't otherwise be met.
+  const pickItems = useCallback((data, needs) => {
+    const exposures = exposuresRef.current;
+    const weightOf = (item) => weightFor(exposures[item.id] ?? 0);
+    const chosen = weightedSample(data, needs, weightOf);
+    chosen.forEach((it) => shownRef.current.add(it.id));
+    return chosen;
+  }, []);
 
   useEffect(() => {
-    getVocabulary()
-      .then((data) => {
+    let cancelled = false;
+    Promise.all([getCourseContent(COURSE_ID), getPracticeExposures(COURSE_ID)])
+      .then(([data, exposures]) => {
+        if (cancelled) return;
         setPool(data);
-        setPhase(availableExercises(data.length).length ? "intro" : "error");
+        exposuresRef.current = exposures || {};
+        if (!availableExercises(data.length).length) {
+          setPhase("error");
+          return;
+        }
+        start(data);
       })
-      .catch(() => setPhase("error"));
+      .catch(() => !cancelled && setPhase("error"));
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const nextRound = useCallback(() => {
@@ -32,19 +61,21 @@ export default function PracticeSession({ onFinish }) {
       (ex) => !round || ex.id !== round.exercise.id || availableExercises(pool.length).length === 1,
     );
     const exercise = pickOne(options.length ? options : availableExercises(pool.length));
-    const items = sample(pool, exercise.needs);
+    const items = pickItems(pool, exercise.needs);
     setRound({ exercise, items, key: `${exercise.id}-${Date.now()}` });
     setFeedback(null);
-  }, [pool, round]);
+  }, [pool, round, pickItems]);
 
-  function start() {
+  function start(data = pool) {
     setScore(0);
     setStreak(0);
     setRoundNo(1);
     setFeedback(null);
+    shownRef.current = new Set();
     setPhase("playing");
-    const exercise = pickOne(availableExercises(pool.length));
-    setRound({ exercise, items: sample(pool, exercise.needs), key: `${exercise.id}-${Date.now()}` });
+    const exercise = pickOne(availableExercises(data.length));
+    const items = pickItems(data, exercise.needs);
+    setRound({ exercise, items, key: `${exercise.id}-${Date.now()}` });
   }
 
   function handleResult(correct, detail = {}) {
@@ -61,8 +92,12 @@ export default function PracticeSession({ onFinish }) {
   function advance() {
     if (roundNo >= TOTAL_ROUNDS) {
       setPhase("summary");
-      // Save the finished session's score for the dashboard (best-effort).
-      recordPractice({ score, total: TOTAL_ROUNDS }).catch(() => {});
+      // Save the score plus the items shown this session (for exposure tracking).
+      recordPractice(COURSE_ID, {
+        score,
+        total: TOTAL_ROUNDS,
+        itemIds: [...shownRef.current],
+      }).catch(() => {});
       return;
     }
     setRoundNo((n) => n + 1);
@@ -82,27 +117,6 @@ export default function PracticeSession({ onFinish }) {
             Make sure the backend is running at the URL in <code>VITE_API_BASE</code> and has at least
             two vocabulary entries.
           </p>
-        </div>
-      </Centered>
-    );
-  }
-
-  if (phase === "intro") {
-    return (
-      <Centered>
-        <div className="max-w-md text-center">
-          <div className="mb-4 text-6xl">📚</div>
-          <h1 className="text-3xl font-extrabold text-slate-800">Vocabulary Practice</h1>
-          <p className="mt-3 text-slate-500">
-            {TOTAL_ROUNDS} quick rounds, mixed exercise types. Look, listen, match and type your way
-            through {pool.length} words.
-          </p>
-          <button
-            onClick={start}
-            className="mt-6 rounded-xl bg-indigo-600 px-8 py-3 text-lg font-semibold text-white shadow-md transition hover:bg-indigo-700"
-          >
-            Start practicing →
-          </button>
         </div>
       </Centered>
     );

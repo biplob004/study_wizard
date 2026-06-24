@@ -9,6 +9,7 @@ export default function SelectionCard({
   disabled = false,
   badge,
   onClick,
+  children,
 }) {
   return (
     <button
@@ -36,6 +37,7 @@ export default function SelectionCard({
       </div>
       <h2 className="text-xl font-bold text-slate-800">{title}</h2>
       {blurb && <p className="mt-2 flex-1 text-sm text-slate-500">{blurb}</p>}
+      {children && <div className="mt-3 w-full">{children}</div>}
       {cta && !disabled && (
         <span
           className={`mt-5 inline-flex items-center gap-1 rounded-xl bg-gradient-to-r px-5 py-2 text-sm font-semibold text-white shadow-sm ${accent}`}

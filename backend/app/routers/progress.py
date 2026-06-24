@@ -1,6 +1,9 @@
-"""Progress routes: record what a learner studied and aggregate it for the dashboard.
+"""Progress routes.
 
-Every route requires a signed-in user (``auth.current_user``).
+Per-course progress is recorded and aggregated under
+``/api/courses/{course_id}/progress/*`` and lives on the course's own router
+(see ``app.courses.vocabulary.router``). This module only exposes the
+cross-course overview used by the dashboard.
 """
 
 from __future__ import annotations
@@ -8,28 +11,26 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends
 
 from .. import auth, db
-from ..schemas import LearnedRequest, PracticeRequest, ProgressSummary
-from ..vocabulary import load_raw
+from ..courses import all_courses
+from ..schemas import OverallProgressItem
 
 router = APIRouter(prefix="/api/progress", tags=["progress"])
 
 
-@router.post("/learned")
-def mark_learned(req: LearnedRequest, user: dict = Depends(auth.current_user)) -> dict[str, str]:
-    """Record that the signed-in user studied a word in Learning mode."""
-    db.record_learned_word(user["id"], req.word_id)
-    return {"status": "ok"}
-
-
-@router.post("/practice")
-def save_practice(req: PracticeRequest, user: dict = Depends(auth.current_user)) -> dict[str, str]:
-    """Record the score of a finished Practice session."""
-    db.record_practice_result(user["id"], req.score, req.total)
-    return {"status": "ok"}
-
-
-@router.get("/summary", response_model=ProgressSummary)
-def summary(user: dict = Depends(auth.current_user)) -> ProgressSummary:
-    """Aggregate progress for the dashboard."""
-    data = db.get_progress_summary(user["id"])
-    return ProgressSummary(total_words=len(load_raw()), **data)
+@router.get("/summary", response_model=list[OverallProgressItem])
+def summary(user: dict = Depends(auth.current_user)) -> list[OverallProgressItem]:
+    """Per-course progress for the signed-in user (one row per course)."""
+    raw = {row["course_id"]: row for row in db.get_overall_progress(user["id"])}
+    out: list[OverallProgressItem] = []
+    for course in all_courses():
+        r = raw.get(course.id)
+        out.append(
+            OverallProgressItem(
+                course_id=course.id,
+                items_learned=r["items_learned"] if r else 0,
+                practice_sessions=r["practice_sessions"] if r else 0,
+                total_stars=r["total_stars"] if r else 0,
+                best_score_pct=r["best_score_pct"] if r else 0,
+            )
+        )
+    return out

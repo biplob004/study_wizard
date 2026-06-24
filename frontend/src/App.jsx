@@ -1,16 +1,14 @@
 // App root: gate everything behind auth, then drive a simple navigation stack
-//   Dashboard → Course → Module → (Learn | Practice)
+//   Landing → Course → Module → (Learn | Practice | ...)
 // A shared TopBar gives back/home/logout on every signed-in screen.
 import { useCallback, useState } from "react";
 import { AuthProvider } from "./auth/AuthContext";
 import { useAuth } from "./auth/context";
 import LoginPage from "./auth/LoginPage";
 import TopBar from "./components/TopBar";
-import Dashboard from "./pages/Dashboard";
+import Landing from "./pages/Landing";
 import CourseScreen from "./pages/CourseScreen";
-import ModuleScreen from "./pages/ModuleScreen";
-import LearningMode from "./learning/LearningMode";
-import PracticeSession from "./session/PracticeSession";
+import { getCoursePlugin } from "./courses/registry";
 
 export default function App() {
   return (
@@ -54,26 +52,21 @@ function AppShell() {
 function Screen({ route, push, home }) {
   switch (route.name) {
     case "home":
-      return <Dashboard onOpenCourse={(course) => push({ name: "course", course })} />;
+      return <Landing onOpenCourse={(course) => push({ name: "course", course })} />;
     case "course":
       return (
         <CourseScreen
           course={route.course}
-          onOpenModule={(module) => push({ name: "module", course: route.course, module })}
+          onStartActivity={(activity) => push({ name: "activity", course: route.course, activity })}
         />
       );
-    case "module":
-      return (
-        <ModuleScreen
-          course={route.course}
-          module={route.module}
-          onStart={(activity) => push({ name: activity, module: route.module })}
-        />
-      );
-    case "learn":
-      return <LearningMode />;
-    case "practice":
-      return <PracticeSession onFinish={home} />;
+    case "activity": {
+      const plugin = getCoursePlugin(route.course.id);
+      const activity = plugin?.activities?.[route.activity];
+      if (!activity) return null;
+      const Activity = activity.Component;
+      return <Activity onFinish={home} />;
+    }
     default:
       return null;
   }

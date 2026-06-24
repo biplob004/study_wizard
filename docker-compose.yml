@@ -17,6 +17,8 @@ services:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
     volumes:
       # Edit vocabulary.json or drop images here without rebuilding the image.
+      - ./backend/app/courses/vocabulary/data:/app/app/courses/vocabulary/data
+      # SQLite DB persists across restarts.
       - ./backend/data:/app/data
     restart: unless-stopped
 

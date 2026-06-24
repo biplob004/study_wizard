@@ -5,11 +5,13 @@
 //  - Card:    one large card with the picture and name; the word auto-plays on open
 //             and on every prev/next move. Arrow keys work too.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getVocabulary, recordLearned } from "../api/client";
-import { playWord } from "../lib/audio";
-import ImageBox from "../components/ImageBox";
+import { getCourseContent, recordLearned } from "../../api/client";
+import { playWord } from "../../lib/audio";
+import ImageBox from "../../components/ImageBox";
 
-export default function LearningMode() {
+const COURSE_ID = "vocabulary";
+
+export default function Learn() {
   const [phase, setPhase] = useState("loading"); // loading | error | ready
   const [items, setItems] = useState([]);
   const [openIndex, setOpenIndex] = useState(null); // null = gallery view
@@ -17,7 +19,7 @@ export default function LearningMode() {
   const recordedRef = useRef(new Set()); // word ids already saved this session
 
   useEffect(() => {
-    getVocabulary()
+    getCourseContent(COURSE_ID)
       .then((data) => {
         setItems(data);
         setPhase(data.length ? "ready" : "error");
@@ -38,7 +40,7 @@ export default function LearningMode() {
     play(item);
     if (item && !recordedRef.current.has(item.id)) {
       recordedRef.current.add(item.id);
-      recordLearned(item.id).catch(() => recordedRef.current.delete(item.id));
+      recordLearned(COURSE_ID, item.id).catch(() => recordedRef.current.delete(item.id));
     }
     return () => stopRef.current();
   }, [openIndex, items, play]);

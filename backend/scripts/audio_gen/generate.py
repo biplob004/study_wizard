@@ -16,9 +16,9 @@ from pathlib import Path
 
 from openai import OpenAI
 
-# data/vocabulary.json -> data/audio/, both live under backend/ (two levels up from
-# backend/scripts/audio_gen/).
-DATA_DIR = Path(__file__).resolve().parents[2] / "data"
+# data/vocabulary.json -> data/audio/, both live under the vocabulary course
+# package (backend/app/courses/vocabulary/data/).
+DATA_DIR = Path(__file__).resolve().parents[2] / "app" / "courses" / "vocabulary" / "data"
 VOCAB_PATH = DATA_DIR / "vocabulary.json"
 AUDIO_DIR = DATA_DIR / "audio"
 

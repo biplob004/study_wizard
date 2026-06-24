@@ -3,7 +3,7 @@
 // learner's progress, all over HTTP.
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
-const TOKEN_KEY = "vocab.authToken";
+const TOKEN_KEY = "edu.authToken";
 
 // --- Token storage ---------------------------------------------------------
 
@@ -52,19 +52,19 @@ async function request(path, { method = "GET", body, auth = false } = {}) {
 
 // --- Content ---------------------------------------------------------------
 
-/** Fetch the vocabulary dataset. Each item's `image` and `audio` are full URLs. */
-export function getVocabulary() {
-  return request("/api/vocabulary");
+/** Fetch a course's content dataset. Each item's `image` and `audio` are full URLs. */
+export function getCourseContent(courseId) {
+  return request(`/api/courses/${courseId}/content`);
 }
 
-/** Fetch the course catalog shown on the dashboard. */
+/** Fetch the course catalog shown on the landing/dashboard. */
 export function getCourses() {
   return request("/api/courses");
 }
 
-/** Ask the backend (Gemini) to judge a free-text answer. */
-export function checkAnswer({ exerciseType, expected, sentence, userAnswer }) {
-  return request("/api/check-answer", {
+/** Ask the backend (Gemini) to judge a free-text answer for a course. */
+export function checkAnswer(courseId, { exerciseType, expected, sentence, userAnswer }) {
+  return request(`/api/courses/${courseId}/check-answer`, {
     method: "POST",
     body: {
       exercise_type: exerciseType,
@@ -97,18 +97,38 @@ export function logout() {
 }
 
 // --- Progress --------------------------------------------------------------
+// Per-course progress is namespaced under /api/courses/{courseId}/progress.
+// The cross-course overview lives at /api/progress/summary.
 
-/** Mark a word as studied in Learning mode (fire-and-forget friendly). */
-export function recordLearned(wordId) {
-  return request("/api/progress/learned", { method: "POST", auth: true, body: { word_id: wordId } });
+/** Mark an item as studied in a course's Learn mode (fire-and-forget friendly). */
+export function recordLearned(courseId, itemId) {
+  return request(`/api/courses/${courseId}/progress/learned`, {
+    method: "POST",
+    auth: true,
+    body: { item_id: itemId },
+  });
 }
 
-/** Save the score of a finished Practice session. */
-export function recordPractice({ score, total }) {
-  return request("/api/progress/practice", { method: "POST", auth: true, body: { score, total } });
+/** Save the score of a finished Practice session for a course. */
+export function recordPractice(courseId, { score, total, itemIds }) {
+  return request(`/api/courses/${courseId}/progress/practice`, {
+    method: "POST",
+    auth: true,
+    body: { score, total, item_ids: itemIds ?? [] },
+  });
 }
 
-/** Aggregated progress for the dashboard. */
+/** Aggregated progress for a single course. */
+export function getCourseProgress(courseId) {
+  return request(`/api/courses/${courseId}/progress/summary`, { auth: true });
+}
+
+/** Map item_id -> times shown in past practice sessions (for biasing sampling). */
+export function getPracticeExposures(courseId) {
+  return request(`/api/courses/${courseId}/progress/exposures`, { auth: true });
+}
+
+/** Per-course progress overview for the dashboard (one row per course). */
 export function getProgressSummary() {
   return request("/api/progress/summary", { auth: true });
 }

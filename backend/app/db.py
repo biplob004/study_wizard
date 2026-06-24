@@ -1,14 +1,19 @@
-"""SQLite storage for accounts and learning progress.
+"""SQLite storage for accounts and per-course learning progress.
 
-The database file lives at ``data/app.db`` (next to ``vocabulary.json``), so it persists across
-restarts and is bind-mounted in Docker just like the rest of ``data/``. Everything here is plain
+The database file lives at ``data/app.db`` (at the backend root), so it persists
+across restarts and is bind-mounted in Docker. Everything here is plain
 ``sqlite3`` from the standard library — no ORM, no extra dependencies.
 
 Tables:
 - ``users``            — one row per account (email + PBKDF2 password hash).
 - ``sessions``         — bearer tokens; one row per active login.
-- ``learned_words``    — which vocabulary words a user has studied in Learning mode.
-- ``practice_results`` — the score of each finished Practice session.
+- ``learned_items``    — items a user has studied in a course's Learn mode,
+                         scoped by (user_id, course_id, item_id).
+- ``practice_results`` — the score of each finished Practice session for a
+                         course, scoped by (user_id, course_id).
+
+The ``course_id`` column isolates each course's progress so records for
+Vocabulary never intermingle with Grammar, etc.
 """
 
 from __future__ import annotations
@@ -18,7 +23,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
 
-DB_PATH = Path(__file__).resolve().parent.parent / "data" / "app.db"
+DB_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "app.db"
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -36,19 +41,30 @@ CREATE TABLE IF NOT EXISTS sessions (
     created_at TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE TABLE IF NOT EXISTS learned_words (
+CREATE TABLE IF NOT EXISTS learned_items (
     user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    word_id    TEXT    NOT NULL,
+    course_id  TEXT    NOT NULL,
+    item_id    TEXT    NOT NULL,
     learned_at TEXT    NOT NULL DEFAULT (datetime('now')),
-    PRIMARY KEY (user_id, word_id)
+    PRIMARY KEY (user_id, course_id, item_id)
 );
 
 CREATE TABLE IF NOT EXISTS practice_results (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    course_id  TEXT    NOT NULL,
     score      INTEGER NOT NULL,
     total      INTEGER NOT NULL,
     created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS practice_exposures (
+    user_id      INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    course_id    TEXT    NOT NULL,
+    item_id      TEXT    NOT NULL,
+    times_shown  INTEGER NOT NULL DEFAULT 0,
+    last_shown   TEXT,
+    PRIMARY KEY (user_id, course_id, item_id)
 );
 """
 
@@ -62,10 +78,7 @@ def init_db() -> None:
 
 @contextmanager
 def connect() -> Iterator[sqlite3.Connection]:
-    """Open a connection with row access by name and foreign keys enforced.
-
-    Used as a context manager so the connection commits on success and always closes.
-    """
+    """Open a connection with row access by name and foreign keys enforced."""
     conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
@@ -79,7 +92,6 @@ def connect() -> Iterator[sqlite3.Connection]:
 # --- Users & sessions -------------------------------------------------------
 
 def create_user(email: str, display_name: str, password_hash: str, salt: str) -> dict[str, Any]:
-    """Insert a new user; raises sqlite3.IntegrityError if the email is taken."""
     with connect() as conn:
         cur = conn.execute(
             "INSERT INTO users (email, display_name, password_hash, salt) VALUES (?, ?, ?, ?)",
@@ -101,7 +113,6 @@ def create_session(token: str, user_id: int) -> None:
 
 
 def get_user_by_token(token: str) -> dict[str, Any] | None:
-    """Resolve a bearer token to its user, or None if the token is unknown."""
     with connect() as conn:
         row = conn.execute(
             "SELECT u.* FROM sessions s JOIN users u ON u.id = s.user_id WHERE s.token = ?",
@@ -115,43 +126,112 @@ def delete_session(token: str) -> None:
         conn.execute("DELETE FROM sessions WHERE token = ?", (token,))
 
 
-# --- Progress ---------------------------------------------------------------
+# --- Per-course progress ----------------------------------------------------
 
-def record_learned_word(user_id: int, word_id: str) -> None:
-    """Mark a word as studied. Idempotent — re-studying keeps the first timestamp."""
+def record_learned_item(user_id: int, course_id: str, item_id: str) -> None:
+    """Mark an item as studied in a course. Idempotent."""
     with connect() as conn:
         conn.execute(
-            "INSERT OR IGNORE INTO learned_words (user_id, word_id) VALUES (?, ?)",
-            (user_id, word_id),
+            "INSERT OR IGNORE INTO learned_items (user_id, course_id, item_id) VALUES (?, ?, ?)",
+            (user_id, course_id, item_id),
         )
 
 
-def record_practice_result(user_id: int, score: int, total: int) -> None:
+def record_practice_result(user_id: int, course_id: str, score: int, total: int) -> None:
     with connect() as conn:
         conn.execute(
-            "INSERT INTO practice_results (user_id, score, total) VALUES (?, ?, ?)",
-            (user_id, score, total),
+            "INSERT INTO practice_results (user_id, course_id, score, total) VALUES (?, ?, ?, ?)",
+            (user_id, course_id, score, total),
         )
 
 
-def get_progress_summary(user_id: int) -> dict[str, Any]:
-    """Aggregate a user's progress for the dashboard."""
+def record_practice_exposures(user_id: int, course_id: str, item_ids: list[str]) -> None:
+    """Bump the times-shown counter for each item the learner saw this session."""
+    if not item_ids:
+        return
     with connect() as conn:
-        words_learned = conn.execute(
-            "SELECT COUNT(*) AS n FROM learned_words WHERE user_id = ?", (user_id,)
+        for item_id in item_ids:
+            conn.execute(
+                """
+                INSERT INTO practice_exposures (user_id, course_id, item_id, times_shown, last_shown)
+                VALUES (?, ?, ?, 1, datetime('now'))
+                ON CONFLICT(user_id, course_id, item_id)
+                DO UPDATE SET times_shown = times_shown + 1, last_shown = datetime('now')
+                """,
+                (user_id, course_id, item_id),
+            )
+
+
+def get_practice_exposures(user_id: int, course_id: str) -> dict[str, int]:
+    """Map item_id -> times shown in past practice sessions for this course."""
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT item_id, times_shown FROM practice_exposures WHERE user_id = ? AND course_id = ?",
+            (user_id, course_id),
+        ).fetchall()
+    return {row["item_id"]: row["times_shown"] for row in rows}
+
+
+def get_course_progress(user_id: int, course_id: str, *, total_items: int) -> dict[str, Any]:
+    """Aggregate a user's progress for a single course."""
+    with connect() as conn:
+        items_learned = conn.execute(
+            "SELECT COUNT(*) AS n FROM learned_items WHERE user_id = ? AND course_id = ?",
+            (user_id, course_id),
         ).fetchone()["n"]
         practice = conn.execute(
             """
             SELECT COUNT(*) AS sessions,
                    COALESCE(SUM(score), 0) AS stars,
                    COALESCE(MAX(score * 100.0 / total), 0) AS best_pct
-            FROM practice_results WHERE user_id = ?
+            FROM practice_results WHERE user_id = ? AND course_id = ?
             """,
-            (user_id,),
+            (user_id, course_id),
         ).fetchone()
     return {
-        "words_learned": words_learned,
+        "course_id": course_id,
+        "items_learned": items_learned,
+        "total_items": total_items,
         "practice_sessions": practice["sessions"],
         "total_stars": practice["stars"],
         "best_score_pct": round(practice["best_pct"]),
     }
+
+
+def get_overall_progress(user_id: int) -> list[dict[str, Any]]:
+    """Raw per-course aggregates (without totals — callers fill those in)."""
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT course_id,
+                   COUNT(DISTINCT item_id) AS items_learned
+            FROM learned_items WHERE user_id = ?
+            GROUP BY course_id
+            """,
+            (user_id,),
+        ).fetchall()
+        practice = conn.execute(
+            """
+            SELECT course_id,
+                   COUNT(*) AS sessions,
+                   COALESCE(SUM(score), 0) AS stars,
+                   COALESCE(MAX(score * 100.0 / total), 0) AS best_pct
+            FROM practice_results WHERE user_id = ?
+            GROUP BY course_id
+            """,
+            (user_id,),
+        ).fetchall()
+    practice_map = {r["course_id"]: r for r in practice}
+    out = []
+    for r in rows:
+        p = practice_map.get(r["course_id"], {})
+        out.append(
+            {
+                "course_id": r["course_id"],
+                "items_learned": r["items_learned"],
+                "practice_sessions": p["sessions"] if p else 0,
+                "total_stars": p["stars"] if p else 0,
+                "best_score_pct": round(p["best_pct"]) if p else 0,
+            }
+        )
+    return out

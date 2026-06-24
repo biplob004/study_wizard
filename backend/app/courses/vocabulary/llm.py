@@ -1,8 +1,7 @@
-"""LangChain + Gemini answer judging, with a deterministic fallback.
+"""LangChain + Gemini answer judging for the vocabulary course, with fallback.
 
-The LLM is optional: client-side exercises work without any API key. Only the free-text exercises
-(``type-answer`` and ``fill-blank``) call this module, and if ``GOOGLE_API_KEY`` is unset or the LLM
-errors, we fall back to a tolerant string match so the app still functions.
+Only free-text exercises call this module. If ``GOOGLE_API_KEY`` is unset or the
+LLM errors, we fall back to a tolerant string match so the app still functions.
 """
 
 from __future__ import annotations
@@ -11,10 +10,11 @@ import logging
 import os
 from functools import lru_cache
 
-from .schemas import AnswerCheck, CheckRequest
-from .vocabulary import find_entry
+from app.schemas import AnswerCheck, CheckRequest
 
-logger = logging.getLogger("llm")
+from .data import find_entry
+
+logger = logging.getLogger("courses.vocabulary.llm")
 
 SYSTEM_PROMPT = (
     "You are a friendly vocabulary tutor for language learners. "
@@ -27,7 +27,6 @@ SYSTEM_PROMPT = (
 
 @lru_cache(maxsize=1)
 def _get_llm():
-    """Build the structured-output Gemini model once, or return None if unavailable."""
     if not os.getenv("GOOGLE_API_KEY"):
         logger.warning("GOOGLE_API_KEY not set — falling back to string matching for answer checks")
         return None
@@ -36,17 +35,15 @@ def _get_llm():
 
         model = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
         return model.with_structured_output(AnswerCheck)
-    except Exception:  # noqa: BLE001 - any import/config failure should degrade gracefully
+    except Exception:  # noqa: BLE001
         logger.exception("Failed to initialize Gemini model — using fallback")
         return None
 
 
 def _fallback(req: CheckRequest) -> AnswerCheck:
-    """Deterministic check: case-insensitive match against expected word + its altWords."""
     answer = req.user_answer.strip().lower()
     accepted = {req.expected.strip().lower()}
 
-    # Pull synonyms from the dataset when the expected word matches a known entry.
     entry = find_entry(req.expected)
     if entry:
         accepted.add(entry["word"].lower())
@@ -58,7 +55,6 @@ def _fallback(req: CheckRequest) -> AnswerCheck:
 
 
 def check_answer(req: CheckRequest) -> AnswerCheck:
-    """Judge a free-text answer, using Gemini when available and the fallback otherwise."""
     llm = _get_llm()
     if llm is None:
         return _fallback(req)
@@ -72,7 +68,6 @@ def check_answer(req: CheckRequest) -> AnswerCheck:
         result = llm.invoke([("system", SYSTEM_PROMPT), ("human", human)])
         if isinstance(result, AnswerCheck):
             return result
-        # Some versions return a dict-like; coerce defensively.
         return AnswerCheck.model_validate(result)
     except Exception:  # noqa: BLE001
         logger.exception("LLM answer check failed — using fallback")

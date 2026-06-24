@@ -6,11 +6,11 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# App code and the dataset/images (also bind-mounted in compose so they can change
-# without a rebuild).
+# App code and scripts (course data lives inside app/courses/*/data/).
+# The SQLite DB (data/app.db) is created on first run; ensure the dir exists.
 COPY app ./app
 COPY scripts ./scripts
-COPY data ./data
+RUN mkdir -p data
 
 EXPOSE 8000
 

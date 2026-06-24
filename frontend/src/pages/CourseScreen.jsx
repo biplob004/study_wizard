@@ -1,34 +1,114 @@
-// A course's modules (e.g. "Learn Vocabulary"). Tapping an available module opens it.
+// A course's home: shows the course's own tracking details plus its activities
+// (Learn / Practice) directly — no extra module nesting in between.
+import { useEffect, useState } from "react";
+import { getCourseProgress } from "../api/client";
+import { getCoursePlugin } from "../courses/registry";
 import PageHeader from "../components/PageHeader";
 import SelectionCard from "../components/SelectionCard";
 
 const ACCENTS = ["from-indigo-500 to-cyan-400", "from-fuchsia-500 to-amber-400", "from-emerald-500 to-teal-400"];
 
-export default function CourseScreen({ course, onOpenModule }) {
-  const modules = course.modules ?? [];
+export default function CourseScreen({ course, onStartActivity }) {
+  const [progress, setProgress] = useState(null);
+  const plugin = getCoursePlugin(course.id);
+
+  // Collect all activity ids across the course's modules (preserving order).
+  const activityIds = (course.modules ?? [])
+    .filter((m) => m.available)
+    .flatMap((m) => m.activities ?? []);
+
+  useEffect(() => {
+    getCourseProgress(course.id)
+      .then(setProgress)
+      .catch(() => setProgress(null));
+  }, [course.id]);
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8">
       <PageHeader emoji={course.emoji} title={course.title} subtitle={course.blurb} />
 
-      {modules.length === 0 ? (
-        <p className="text-center text-slate-500">No modules yet — check back soon.</p>
+      <CourseProgressPanel course={course} progress={progress} />
+
+      <h2 className="mb-4 mt-10 text-lg font-bold text-slate-800">Activities</h2>
+      {activityIds.length === 0 ? (
+        <p className="text-center text-slate-500">No activities yet — check back soon.</p>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {modules.map((module, i) => (
-            <SelectionCard
-              key={module.id}
-              emoji={module.emoji}
-              title={module.title}
-              blurb={module.blurb}
-              cta="Open"
-              accent={ACCENTS[i % ACCENTS.length]}
-              disabled={!module.available}
-              onClick={() => onOpenModule(module)}
-            />
-          ))}
+          {activityIds.map((id, i) => {
+            const activity = plugin?.activities?.[id];
+            if (!activity) return null;
+            return (
+              <SelectionCard
+                key={id}
+                emoji={activity.emoji}
+                title={activity.title}
+                blurb={activity.blurb}
+                cta={activity.cta}
+                accent={ACCENTS[i % ACCENTS.length]}
+                onClick={() => onStartActivity(id)}
+              />
+            );
+          })}
         </div>
       )}
+    </div>
+  );
+}
+
+function CourseProgressPanel({ course, progress }) {
+  if (!progress) {
+    return (
+      <section className="rounded-3xl bg-white/80 p-6 text-center shadow-xl ring-1 ring-slate-100 backdrop-blur">
+        <p className="text-sm text-slate-400">Loading your progress…</p>
+      </section>
+    );
+  }
+
+  const { items_learned, total_items, practice_sessions, total_stars, best_score_pct } = progress;
+  const pct = total_items ? Math.round((items_learned / total_items) * 100) : 0;
+  const started = items_learned > 0 || practice_sessions > 0;
+
+  if (!started) {
+    return (
+      <section className="rounded-3xl bg-white/80 p-6 text-center shadow-xl ring-1 ring-slate-100 backdrop-blur">
+        <div className="mb-2 text-4xl">🚀</div>
+        <p className="font-semibold text-slate-700">Not started yet</p>
+        <p className="mt-1 text-sm text-slate-500">
+          Pick an activity below to begin your {course.title} journey.
+        </p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="rounded-3xl bg-white/80 p-6 shadow-xl ring-1 ring-slate-100 backdrop-blur">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <Stat label="Items learned" value={`${items_learned}/${total_items}`} />
+        <Stat label="Practice sessions" value={practice_sessions} />
+        <Stat label="Best score" value={`${best_score_pct}%`} />
+        <Stat label="Stars earned" value={`⭐ ${total_stars}`} />
+      </div>
+      <div className="mt-5">
+        <div className="mb-1 flex justify-between text-xs font-medium text-slate-500">
+          <span>{course.title} progress</span>
+          <span>{pct}%</span>
+        </div>
+        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-cyan-400 transition-all duration-500"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Stat({ label, value }) {
+  return (
+    <div className="rounded-2xl bg-slate-50 px-4 py-3 text-center">
+      <div className="text-2xl font-extrabold text-slate-800">{value}</div>
+      <div className="mt-1 text-xs font-medium text-slate-500">{label}</div>
     </div>
   );
 }
