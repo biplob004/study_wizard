@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS practice_results (
     id         INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     course_id  TEXT    NOT NULL,
+    activity   TEXT    NOT NULL DEFAULT 'practice',
     score      INTEGER NOT NULL,
     total      INTEGER NOT NULL,
     created_at TEXT    NOT NULL DEFAULT (datetime('now'))
@@ -74,6 +75,14 @@ def init_db() -> None:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     with connect() as conn:
         conn.executescript(SCHEMA)
+        _migrate(conn)
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Add columns introduced after the initial schema (safe if already present)."""
+    cols = {row[1] for row in conn.execute("PRAGMA table_info(practice_results)").fetchall()}
+    if "activity" not in cols:
+        conn.execute("ALTER TABLE practice_results ADD COLUMN activity TEXT NOT NULL DEFAULT 'practice'")
 
 
 @contextmanager
@@ -137,11 +146,13 @@ def record_learned_item(user_id: int, course_id: str, item_id: str) -> None:
         )
 
 
-def record_practice_result(user_id: int, course_id: str, score: int, total: int) -> None:
+def record_practice_result(
+    user_id: int, course_id: str, score: int, total: int, activity: str = "practice"
+) -> None:
     with connect() as conn:
         conn.execute(
-            "INSERT INTO practice_results (user_id, course_id, score, total) VALUES (?, ?, ?, ?)",
-            (user_id, course_id, score, total),
+            "INSERT INTO practice_results (user_id, course_id, activity, score, total) VALUES (?, ?, ?, ?, ?)",
+            (user_id, course_id, activity, score, total),
         )
 
 
@@ -184,7 +195,16 @@ def get_course_progress(user_id: int, course_id: str, *, total_items: int) -> di
             SELECT COUNT(*) AS sessions,
                    COALESCE(SUM(score), 0) AS stars,
                    COALESCE(MAX(score * 100.0 / total), 0) AS best_pct
-            FROM practice_results WHERE user_id = ? AND course_id = ?
+            FROM practice_results WHERE user_id = ? AND course_id = ? AND activity = 'practice'
+            """,
+            (user_id, course_id),
+        ).fetchone()
+        card_flip = conn.execute(
+            """
+            SELECT COUNT(*) AS sessions,
+                   COALESCE(SUM(score), 0) AS stars,
+                   COALESCE(MAX(score * 100.0 / total), 0) AS best_pct
+            FROM practice_results WHERE user_id = ? AND course_id = ? AND activity = 'card-flip'
             """,
             (user_id, course_id),
         ).fetchone()
@@ -195,11 +215,14 @@ def get_course_progress(user_id: int, course_id: str, *, total_items: int) -> di
         "practice_sessions": practice["sessions"],
         "total_stars": practice["stars"],
         "best_score_pct": round(practice["best_pct"]),
+        "card_flip_sessions": card_flip["sessions"],
+        "card_flip_stars": card_flip["stars"],
+        "card_flip_best_pct": round(card_flip["best_pct"]),
     }
 
 
 def get_overall_progress(user_id: int) -> list[dict[str, Any]]:
-    """Raw per-course aggregates (without totals — callers fill those in)."""
+    """Per-course items-learned counts (the only thing the dashboard needs)."""
     with connect() as conn:
         rows = conn.execute(
             """
@@ -210,28 +233,7 @@ def get_overall_progress(user_id: int) -> list[dict[str, Any]]:
             """,
             (user_id,),
         ).fetchall()
-        practice = conn.execute(
-            """
-            SELECT course_id,
-                   COUNT(*) AS sessions,
-                   COALESCE(SUM(score), 0) AS stars,
-                   COALESCE(MAX(score * 100.0 / total), 0) AS best_pct
-            FROM practice_results WHERE user_id = ?
-            GROUP BY course_id
-            """,
-            (user_id,),
-        ).fetchall()
-    practice_map = {r["course_id"]: r for r in practice}
-    out = []
-    for r in rows:
-        p = practice_map.get(r["course_id"], {})
-        out.append(
-            {
-                "course_id": r["course_id"],
-                "items_learned": r["items_learned"],
-                "practice_sessions": p["sessions"] if p else 0,
-                "total_stars": p["stars"] if p else 0,
-                "best_score_pct": round(p["best_pct"]) if p else 0,
-            }
-        )
-    return out
+    return [
+        {"course_id": r["course_id"], "items_learned": r["items_learned"]}
+        for r in rows
+    ]

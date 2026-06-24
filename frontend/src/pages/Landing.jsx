@@ -101,18 +101,12 @@ function ProgressOverview({ progress }) {
     );
   }
 
-  const totalSessions = progress.reduce((s, p) => s + (p.practice_sessions || 0), 0);
-  const totalStars = progress.reduce((s, p) => s + (p.total_stars || 0), 0);
-  const bestScore = progress.reduce((m, p) => Math.max(m, p.best_score_pct || 0), 0);
   const activeCourses = progress.filter((p) => (p.items_learned || 0) > 0).length;
 
   return (
     <section className="mt-8 rounded-3xl bg-white/80 p-6 shadow-xl ring-1 ring-slate-100 backdrop-blur">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Stat label="Courses started" value={activeCourses} />
-        <Stat label="Practice sessions" value={totalSessions} />
-        <Stat label="Best score" value={`${bestScore}%`} />
-        <Stat label="Stars earned" value={`⭐ ${totalStars}`} />
       </div>
     </section>
   );

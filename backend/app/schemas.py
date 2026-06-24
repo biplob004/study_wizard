@@ -64,6 +64,10 @@ class PracticeRequest(BaseModel):
         default_factory=list,
         description="The item ids shown during this session, for exposure tracking",
     )
+    activity: str = Field(
+        default="practice",
+        description="Which activity produced this result (e.g. 'practice', 'card-flip')",
+    )
 
 
 class CourseProgress(BaseModel):
@@ -73,11 +77,11 @@ class CourseProgress(BaseModel):
     practice_sessions: int
     total_stars: int
     best_score_pct: int
+    card_flip_sessions: int = 0
+    card_flip_stars: int = 0
+    card_flip_best_pct: int = 0
 
 
 class OverallProgressItem(BaseModel):
     course_id: str
     items_learned: int
-    practice_sessions: int
-    total_stars: int
-    best_score_pct: int

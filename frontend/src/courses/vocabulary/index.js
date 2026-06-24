@@ -5,6 +5,7 @@
 // (title, emoji, blurb, modules, word counts); this module supplies the UI.
 import Learn from "./Learn";
 import Practice from "./Practice";
+import CardFlip from "./CardFlip";
 
 export default {
   id: "vocabulary",
@@ -26,6 +27,15 @@ export default {
       cta: "Start practicing",
       accent: "from-fuchsia-500 to-amber-400",
       Component: Practice,
+    },
+    "card-flip": {
+      id: "card-flip",
+      emoji: "🃏",
+      title: "Card Flip",
+      blurb: "Memory game: 4 cards shown for 4 seconds, then flip to find the correct one!",
+      cta: "Play Card Flip",
+      accent: "from-emerald-500 to-teal-400",
+      Component: CardFlip,
     },
   },
 };

@@ -110,11 +110,11 @@ export function recordLearned(courseId, itemId) {
 }
 
 /** Save the score of a finished Practice session for a course. */
-export function recordPractice(courseId, { score, total, itemIds }) {
+export function recordPractice(courseId, { score, total, itemIds, activity = "practice" }) {
   return request(`/api/courses/${courseId}/progress/practice`, {
     method: "POST",
     auth: true,
-    body: { score, total, item_ids: itemIds ?? [] },
+    body: { score, total, item_ids: itemIds ?? [], activity },
   });
 }
 

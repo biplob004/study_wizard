@@ -28,9 +28,6 @@ def summary(user: dict = Depends(auth.current_user)) -> list[OverallProgressItem
             OverallProgressItem(
                 course_id=course.id,
                 items_learned=r["items_learned"] if r else 0,
-                practice_sessions=r["practice_sessions"] if r else 0,
-                total_stars=r["total_stars"] if r else 0,
-                best_score_pct=r["best_score_pct"] if r else 0,
             )
         )
     return out

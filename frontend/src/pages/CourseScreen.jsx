@@ -64,9 +64,18 @@ function CourseProgressPanel({ course, progress }) {
     );
   }
 
-  const { items_learned, total_items, practice_sessions, total_stars, best_score_pct } = progress;
+  const {
+    items_learned,
+    total_items,
+    practice_sessions,
+    total_stars,
+    best_score_pct,
+    card_flip_sessions = 0,
+    card_flip_stars = 0,
+    card_flip_best_pct = 0,
+  } = progress;
   const pct = total_items ? Math.round((items_learned / total_items) * 100) : 0;
-  const started = items_learned > 0 || practice_sessions > 0;
+  const started = items_learned > 0 || practice_sessions > 0 || card_flip_sessions > 0;
 
   if (!started) {
     return (
@@ -88,6 +97,20 @@ function CourseProgressPanel({ course, progress }) {
         <Stat label="Best score" value={`${best_score_pct}%`} />
         <Stat label="Stars earned" value={`⭐ ${total_stars}`} />
       </div>
+
+      {card_flip_sessions > 0 && (
+        <div className="mt-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 p-4 ring-1 ring-emerald-100">
+          <div className="mb-3 flex items-center gap-2 text-sm font-bold text-emerald-700">
+            <span className="text-lg">🃏</span> Card Flip memory game
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <Stat label="Games played" value={card_flip_sessions} />
+            <Stat label="Best score" value={`${card_flip_best_pct}%`} />
+            <Stat label="Stars earned" value={`⭐ ${card_flip_stars}`} />
+          </div>
+        </div>
+      )}
+
       <div className="mt-5">
         <div className="mb-1 flex justify-between text-xs font-medium text-slate-500">
           <span>{course.title} progress</span>

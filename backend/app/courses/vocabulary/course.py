@@ -48,7 +48,7 @@ class VocabularyCourse(Course):
                 "blurb": f"{word_count} essential words with pictures and audio.",
                 "wordCount": word_count,
                 "available": True,
-                "activities": ["learn", "practice"],
+                "activities": ["learn", "practice", "card-flip"],
             }
         ]
 
@@ -80,7 +80,7 @@ class VocabularyCourse(Course):
         def save_practice(
             req: PracticeRequest, user: dict = Depends(auth.current_user)
         ) -> dict[str, str]:
-            db.record_practice_result(user["id"], COURSE_ID, req.score, req.total)
+            db.record_practice_result(user["id"], COURSE_ID, req.score, req.total, req.activity)
             db.record_practice_exposures(user["id"], COURSE_ID, req.item_ids)
             return {"status": "ok"}
 
