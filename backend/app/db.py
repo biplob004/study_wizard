@@ -23,7 +23,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterator
 
-DB_PATH = Path(__file__).resolve().parent.parent.parent / "data" / "app.db"
+DB_PATH = Path(__file__).resolve().parent.parent / "data" / "app.db"
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
