@@ -67,6 +67,13 @@ CREATE TABLE IF NOT EXISTS practice_exposures (
     last_shown   TEXT,
     PRIMARY KEY (user_id, course_id, item_id)
 );
+
+CREATE TABLE IF NOT EXISTS focus_time (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    day     TEXT    NOT NULL,   -- the learner's LOCAL calendar day, 'YYYY-MM-DD'
+    seconds INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, day)
+);
 """
 
 
@@ -237,3 +244,36 @@ def get_overall_progress(user_id: int) -> list[dict[str, Any]]:
         {"course_id": r["course_id"], "items_learned": r["items_learned"]}
         for r in rows
     ]
+
+
+# --- Focus time -------------------------------------------------------------
+# Time the learner spent with the site as the foreground, focused tab. The
+# frontend ticks a counter only while the tab is visible and focused, then
+# flushes the elapsed seconds here, bucketed by the learner's local calendar day.
+
+def add_focus_time(user_id: int, day: str, seconds: int) -> None:
+    """Add focused seconds to a learner's daily bucket (creating it if needed)."""
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO focus_time (user_id, day, seconds)
+            VALUES (?, ?, ?)
+            ON CONFLICT(user_id, day)
+            DO UPDATE SET seconds = seconds + excluded.seconds
+            """,
+            (user_id, day, seconds),
+        )
+
+
+def get_focus_time(user_id: int, since_day: str) -> list[dict[str, Any]]:
+    """Daily focused seconds for a learner on or after ``since_day`` (oldest first)."""
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT day, seconds FROM focus_time
+            WHERE user_id = ? AND day >= ?
+            ORDER BY day ASC
+            """,
+            (user_id, since_day),
+        ).fetchall()
+    return [{"day": r["day"], "seconds": r["seconds"]} for r in rows]

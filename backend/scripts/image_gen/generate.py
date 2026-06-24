@@ -96,9 +96,10 @@ def generate_from_vocabulary(*, overwrite: bool = False) -> list[Path]:
     failed: list[str] = []
     for entry in entries:
         prompt = entry.get("imagePrompt")
-        filename = entry.get("image")
-        if not prompt or not filename:
+        entry_id = entry.get("id")
+        if not prompt or not entry_id:
             continue
+        filename = f"{entry_id}.png"
         out_path = IMAGES_DIR / filename
         if out_path.exists() and not overwrite:
             print(f"skip {filename} (exists)", flush=True)

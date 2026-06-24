@@ -21,7 +21,9 @@ AUDIO_DIR = DATA_DIR / "audio"
 
 AUDIO_FORMAT = "mp3"
 
-REQUIRED_FIELDS = ("id", "word", "sentence", "category", "image")
+REQUIRED_FIELDS = ("id", "word", "sentence", "category")
+
+IMAGE_FORMAT = "png"
 
 
 def load_raw() -> list[dict[str, Any]]:
@@ -55,11 +57,12 @@ def load_raw() -> list[dict[str, Any]]:
             continue
         seen_ids.add(entry["id"])
 
-        if not (IMAGES_DIR / entry["image"]).exists():
+        image_name = f"{entry['id']}.{IMAGE_FORMAT}"
+        if not (IMAGES_DIR / image_name).exists():
             logger.warning(
                 "Image file missing for %r: expected data/images/%s",
                 entry["id"],
-                entry["image"],
+                image_name,
             )
 
         entry.setdefault("altWords", [])
@@ -75,7 +78,7 @@ def get_dataset(base_url: str) -> list[dict[str, Any]]:
     dataset = []
     for entry in load_raw():
         item = dict(entry)
-        item["image"] = f"{base}/static/courses/vocabulary/images/{entry['image']}"
+        item["image"] = f"{base}/static/courses/vocabulary/images/{entry['id']}.{IMAGE_FORMAT}"
         item["audio"] = f"{base}/static/courses/vocabulary/audio/{entry['id']}.{AUDIO_FORMAT}"
         dataset.append(item)
     return dataset

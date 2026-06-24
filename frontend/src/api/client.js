@@ -132,3 +132,21 @@ export function getPracticeExposures(courseId) {
 export function getProgressSummary() {
   return request("/api/progress/summary", { auth: true });
 }
+
+// --- Focus time ------------------------------------------------------------
+// Time spent with the site as the foreground, focused tab. The frontend ticks
+// the counter locally (only while visible + focused) and flushes here.
+
+/** Add focused seconds to the learner's bucket for a local day (YYYY-MM-DD). */
+export function recordFocusTime(day, seconds) {
+  return request("/api/time/heartbeat", {
+    method: "POST",
+    auth: true,
+    body: { day, seconds },
+  });
+}
+
+/** Daily focused seconds over the recent window (oldest first), for the dashboard. */
+export function getDailyTime(days = 56) {
+  return request(`/api/time/daily?days=${days}`, { auth: true });
+}

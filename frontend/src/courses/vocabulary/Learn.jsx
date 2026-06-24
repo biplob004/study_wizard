@@ -155,6 +155,21 @@ function CardView({ item, index, total, onPrev, onNext, onReplay, onClose }) {
           >
             🔊
           </button>
+          {item.meaning && (
+            <div className="group relative">
+              <button
+                type="button"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-base text-amber-700 shadow-sm ring-1 ring-amber-200 transition hover:bg-amber-200"
+                aria-label="Show Hindi meaning"
+              >
+                अ
+              </button>
+              <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-xl bg-amber-700 px-3 py-1.5 text-sm font-medium text-white opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100">
+                {item.meaning}
+                <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-amber-700" />
+              </div>
+            </div>
+          )}
         </div>
         {item.sentence && (
           <p className="mt-2 text-center text-slate-500">{item.sentence}</p>
@@ -185,6 +200,7 @@ function CardView({ item, index, total, onPrev, onNext, onReplay, onClose }) {
     </div>
   );
 }
+
 
 function Centered({ children }) {
   return (

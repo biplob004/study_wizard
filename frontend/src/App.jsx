@@ -9,6 +9,7 @@ import TopBar from "./components/TopBar";
 import Landing from "./pages/Landing";
 import CourseScreen from "./pages/CourseScreen";
 import { getCoursePlugin } from "./courses/registry";
+import { useTimeTracker } from "./lib/useTimeTracker";
 
 export default function App() {
   return (
@@ -31,6 +32,10 @@ function Root() {
 }
 
 function AppShell() {
+  // Count time spent on the site for the whole signed-in session, regardless of
+  // which screen is showing (only while this tab is the focused foreground tab).
+  useTimeTracker(true);
+
   // A stack of routes; the last one is what's shown. Pushing navigates deeper.
   const [stack, setStack] = useState([{ name: "home" }]);
   const route = stack[stack.length - 1];

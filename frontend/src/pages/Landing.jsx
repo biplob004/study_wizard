@@ -2,9 +2,10 @@
 // embedded per-course progress overview and the course catalog. Logged-in users
 // see their stats and a "Continue" path; the page is the home screen.
 import { useEffect, useState } from "react";
-import { getCourses, getProgressSummary } from "../api/client";
+import { getCourses, getProgressSummary, getDailyTime } from "../api/client";
 import { useAuth } from "../auth/context";
 import SelectionCard from "../components/SelectionCard";
+import { buildTimeSummary, formatDuration } from "../lib/time";
 
 const ACCENTS = [
   "from-indigo-500 to-cyan-400",
@@ -18,13 +19,15 @@ export default function Landing({ onOpenCourse }) {
   const { user } = useAuth();
   const [courses, setCourses] = useState([]);
   const [progress, setProgress] = useState([]); // [{course_id, ...}]
+  const [timeRows, setTimeRows] = useState([]); // [{day, seconds}]
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    Promise.all([getCourses(), getProgressSummary()])
-      .then(([c, p]) => {
+    Promise.all([getCourses(), getProgressSummary(), getDailyTime()])
+      .then(([c, p, t]) => {
         setCourses(c);
         setProgress(p);
+        setTimeRows(t);
       })
       .catch(() => setError(true));
   }, []);
@@ -40,7 +43,7 @@ export default function Landing({ onOpenCourse }) {
           Couldn’t load your courses. Make sure the backend is running.
         </p>
       ) : (
-        <ProgressOverview progress={progress} />
+        <ProgressOverview progress={progress} timeRows={timeRows} />
       )}
 
       <section className="mt-12">
@@ -88,27 +91,78 @@ function Hero({ user }) {
   );
 }
 
-function ProgressOverview({ progress }) {
-  if (!progress || progress.length === 0) {
-    return (
-      <section className="mt-8 rounded-3xl bg-white/80 p-6 text-center shadow-xl ring-1 ring-slate-100 backdrop-blur">
-        <div className="mb-2 text-4xl">🚀</div>
-        <p className="font-semibold text-slate-700">Ready to begin?</p>
-        <p className="mt-1 text-sm text-slate-500">
-          Pick a course below to start your learning journey.
-        </p>
-      </section>
-    );
-  }
-
-  const activeCourses = progress.filter((p) => (p.items_learned || 0) > 0).length;
+function ProgressOverview({ progress, timeRows }) {
+  const activeCourses = (progress || []).filter((p) => (p.items_learned || 0) > 0).length;
 
   return (
     <section className="mt-8 rounded-3xl bg-white/80 p-6 shadow-xl ring-1 ring-slate-100 backdrop-blur">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)]">
         <Stat label="Courses started" value={activeCourses} />
+        <TimePanel timeRows={timeRows} />
       </div>
     </section>
+  );
+}
+
+// Time spent on the site, focused, over the last 7 days — shown to the right of
+// the course count. Heights are relative to the busiest of the seven days.
+function TimePanel({ timeRows }) {
+  const { last7, today, weeklyAverage } = buildTimeSummary(timeRows);
+  const chrono = [...last7].reverse(); // oldest → today, left to right
+  const peak = Math.max(1, ...chrono.map((d) => d.seconds));
+
+  return (
+    <div className="rounded-2xl bg-gradient-to-br from-indigo-50 to-cyan-50 px-4 py-3 ring-1 ring-indigo-100/60">
+      <div className="flex items-baseline justify-between">
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+          <span>⏱️</span>
+          <span>Time on site · last 7 days</span>
+        </div>
+        <div className="text-right">
+          <div className="text-lg font-extrabold leading-none text-slate-800">
+            {formatDuration(today)}
+          </div>
+          <div className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+            today
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-end justify-between gap-1.5">
+        {chrono.map((d) => {
+          const h = Math.round((d.seconds / peak) * 100);
+          const isToday = d.label === "Today";
+          return (
+            <div key={d.key} className="flex flex-1 flex-col items-center gap-1" title={`${d.label}: ${formatDuration(d.seconds)}`}>
+              <div className="flex h-20 w-full items-end justify-center">
+                <div
+                  className={`w-full max-w-[1.6rem] rounded-md transition-all ${
+                    isToday
+                      ? "bg-gradient-to-t from-indigo-600 to-cyan-400"
+                      : d.seconds > 0
+                        ? "bg-indigo-300"
+                        : "bg-slate-200"
+                  }`}
+                  style={{ height: `${Math.max(d.seconds > 0 ? 6 : 3, h)}%` }}
+                />
+              </div>
+              <span
+                className={`text-[9px] font-semibold ${
+                  d.isSunday ? "text-rose-400" : "text-slate-400"
+                }`}
+              >
+                {d.label === "Today" ? "Today" : d.label === "Yesterday" ? "Yest" : d.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 border-t border-indigo-100/70 pt-2 text-center">
+        <span className="text-sm font-bold text-slate-700">{formatDuration(weeklyAverage)}</span>
+        <span className="ml-1.5 text-xs font-medium text-slate-500">weekly avg · per day since Sunday</span>
+      </div>
+    </div>
   );
 }
 

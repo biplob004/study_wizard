@@ -85,3 +85,22 @@ class CourseProgress(BaseModel):
 class OverallProgressItem(BaseModel):
     course_id: str
     items_learned: int
+
+
+# --- Focus time -------------------------------------------------------------
+
+class FocusHeartbeat(BaseModel):
+    day: str = Field(
+        pattern=r"^\d{4}-\d{2}-\d{2}$",
+        description="The learner's local calendar day for these seconds (YYYY-MM-DD)",
+    )
+    seconds: int = Field(
+        ge=0,
+        le=86_400,
+        description="Focused seconds to add to that day's bucket",
+    )
+
+
+class FocusDay(BaseModel):
+    day: str
+    seconds: int
