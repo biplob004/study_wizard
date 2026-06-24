@@ -1,7 +1,7 @@
 // Orchestrates a Vocabulary Practice session: loads data from the backend,
 // serves random exercises, and tracks score/streak across a fixed number of rounds.
 import { useCallback, useEffect, useState } from "react";
-import { getVocabulary } from "../api/client";
+import { getVocabulary, recordPractice } from "../api/client";
 import { availableExercises } from "../exercises/registry";
 import { pickOne, sample } from "../lib/random";
 import SessionHeader from "../components/SessionHeader";
@@ -9,7 +9,7 @@ import FeedbackBanner from "../components/FeedbackBanner";
 
 const TOTAL_ROUNDS = 10;
 
-export default function PracticeSession() {
+export default function PracticeSession({ onFinish }) {
   const [phase, setPhase] = useState("loading"); // loading | error | intro | playing | summary
   const [pool, setPool] = useState([]);
   const [round, setRound] = useState(null); // { exercise, items, key }
@@ -61,6 +61,8 @@ export default function PracticeSession() {
   function advance() {
     if (roundNo >= TOTAL_ROUNDS) {
       setPhase("summary");
+      // Save the finished session's score for the dashboard (best-effort).
+      recordPractice({ score, total: TOTAL_ROUNDS }).catch(() => {});
       return;
     }
     setRoundNo((n) => n + 1);
@@ -116,12 +118,22 @@ export default function PracticeSession() {
           <p className="mt-2 text-slate-500">
             You scored <span className="font-bold text-indigo-600">{score}</span> / {TOTAL_ROUNDS} ({pct}%).
           </p>
-          <button
-            onClick={start}
-            className="mt-6 rounded-xl bg-indigo-600 px-8 py-3 text-lg font-semibold text-white shadow-md transition hover:bg-indigo-700"
-          >
-            Practice again
-          </button>
+          <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+            <button
+              onClick={start}
+              className="rounded-xl bg-indigo-600 px-8 py-3 text-lg font-semibold text-white shadow-md transition hover:bg-indigo-700"
+            >
+              Practice again
+            </button>
+            {onFinish && (
+              <button
+                onClick={onFinish}
+                className="rounded-xl border border-slate-200 px-8 py-3 text-lg font-semibold text-slate-600 transition hover:text-indigo-600"
+              >
+                Back to dashboard
+              </button>
+            )}
+          </div>
         </div>
       </Centered>
     );

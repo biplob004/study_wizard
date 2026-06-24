@@ -4,8 +4,8 @@
 //  - Gallery: every word as a card (picture + name below); click one to open it.
 //  - Card:    one large card with the picture and name; the word auto-plays on open
 //             and on every prev/next move. Arrow keys work too.
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getVocabulary } from "../api/client";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { getVocabulary, recordLearned } from "../api/client";
 import { playWord } from "../lib/audio";
 import ImageBox from "../components/ImageBox";
 
@@ -14,6 +14,7 @@ export default function LearningMode() {
   const [items, setItems] = useState([]);
   const [openIndex, setOpenIndex] = useState(null); // null = gallery view
   const stopRef = useRef(() => {});
+  const recordedRef = useRef(new Set()); // word ids already saved this session
 
   useEffect(() => {
     getVocabulary()
@@ -29,10 +30,16 @@ export default function LearningMode() {
     stopRef.current = playWord(item);
   }, []);
 
-  // Auto-play whenever a card is open and the index changes.
+  // Auto-play whenever a card is open and the index changes, and record the word as
+  // studied (once per session per word — the backend also dedupes).
   useEffect(() => {
     if (openIndex == null) return undefined;
-    play(items[openIndex]);
+    const item = items[openIndex];
+    play(item);
+    if (item && !recordedRef.current.has(item.id)) {
+      recordedRef.current.add(item.id);
+      recordLearned(item.id).catch(() => recordedRef.current.delete(item.id));
+    }
     return () => stopRef.current();
   }, [openIndex, items, play]);
 

@@ -1,21 +1,37 @@
-# Education Site — Vocabulary Practice
+# Education Site — AI Study Wizard
 
-The first module of an educational exercise system. It opens on a **mode picker** with two ways to study:
+An educational exercise system with **accounts and progress tracking**. After signing in, a learner
+lands on a **dashboard** showing their progress, then drills into:
 
-- **Learning mode** — a calm, self-paced gallery. Tap any word to see the picture big with the name
-  below, hear it spoken (auto-plays), and flip through cards with prev/next or the arrow keys.
-- **Practice mode** — a scored session that serves **8 different exercise types in random order**, so a
-  learner drills the same vocabulary in varied ways.
+```
+Dashboard → Course ("Learn Basic English") → Module ("Learn Vocabulary") → Learn | Practice
+```
+
+- **Learn** — a calm, self-paced gallery. Tap any word to see the picture big with the name below,
+  hear it spoken (auto-plays), and flip through cards with prev/next or the arrow keys. Studied words
+  count toward your progress.
+- **Practice** — a scored session that serves **8 different exercise types in random order**. Your
+  score is saved to your account.
 
 - **Frontend** — Vite + React + Tailwind. UI only; it ships **no data** and fetches everything from the API.
-- **Backend** — FastAPI. **Owns the data** (the vocabulary JSON + the image files) and judges free-text
-  answers using **Gemini via LangChain** (with a deterministic fallback when no API key is set).
+- **Backend** — FastAPI. **Owns the data** (the vocabulary JSON + the image/audio files), stores
+  **accounts and progress in SQLite**, and judges free-text answers using **Gemini via LangChain**
+  (with a deterministic fallback when no API key is set).
 
 ```
 education_site/
-  frontend/   # Vite + React app
-  backend/    # FastAPI app + the dataset and images
+  frontend/   # Vite + React app (auth, dashboard, courses, learn/practice)
+  backend/    # FastAPI app + the dataset/media + SQLite (data/app.db)
 ```
+
+## Accounts & progress
+
+- Register or log in with email + password. Passwords are hashed with **PBKDF2** (standard library);
+  login issues a bearer token stored in the `sessions` table.
+- Progress is tracked per account: **words studied** in Learn mode and **scores** of finished Practice
+  sessions, aggregated on the dashboard (words learned, sessions played, best score, stars).
+- Everything persists in **`backend/data/app.db`** (plain `sqlite3`, created automatically on first
+  run, git-ignored, and bind-mounted in Docker so it survives restarts).
 
 ## The 8 exercise types
 
@@ -62,8 +78,11 @@ cp .env.example .env        # then paste your Gemini key into GOOGLE_API_KEY (op
 uvicorn app.main:app --reload --port 8000
 ```
 
-- `GET  http://localhost:8000/api/vocabulary` — the dataset (image fields are full URLs)
+- `GET  http://localhost:8000/api/vocabulary` — the dataset (image/audio fields are full URLs)
+- `GET  http://localhost:8000/api/courses` — the course catalog for the dashboard
 - `POST http://localhost:8000/api/check-answer` — LLM answer judging
+- `POST http://localhost:8000/api/auth/register` · `login` · `logout`, `GET /api/auth/me` — accounts
+- `POST http://localhost:8000/api/progress/learned` · `practice`, `GET /api/progress/summary` — progress (auth required)
 - `GET  http://localhost:8000/api/health`
 - Get a Gemini key at https://aistudio.google.com/app/apikey (optional — only the two typed exercises use it).
 
