@@ -67,8 +67,8 @@ def delete_recurring(
 ) -> dict[str, Any]:
     """Remove a recurring habit from the signed-in user's list (SQLite).
 
-    Per-day completion records for the removed habit are kept as history — only
-    the habit *definition* is removed.
+    Its per-day check-offs are also removed so totals and streaks recompute
+    cleanly — a re-added habit with the same name starts fresh.
     """
     habits = db.delete_task_habit_by_index(user["id"], index)
     return {"recurring": [{"text": h["text"], "points": h["points"]} for h in habits]}
