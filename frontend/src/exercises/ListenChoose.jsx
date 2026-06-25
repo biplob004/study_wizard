@@ -1,16 +1,10 @@
 // Exercise 7 — Listen & choose.
-// The browser speaks the word (Web Speech API); pick the matching image.
+// Plays the pre-generated clip for the word (with a speech-synthesis fallback);
+// pick the matching image.
 import { useEffect, useMemo, useState } from "react";
 import ImageBox from "../components/ImageBox";
 import { pickDistractors, shuffle } from "../lib/random";
-
-function speak(text) {
-  if (typeof window === "undefined" || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.rate = 0.9;
-  window.speechSynthesis.speak(utter);
-}
+import { playWord } from "../lib/audio";
 
 function ListenChoose({ items, pool, onResult }) {
   const target = items[0];
@@ -19,12 +13,9 @@ function ListenChoose({ items, pool, onResult }) {
     [target, pool],
   );
   const [picked, setPicked] = useState(null);
-  const supported = typeof window !== "undefined" && !!window.speechSynthesis;
+  const supported = typeof window !== "undefined" && (!!window.speechSynthesis || !!target.audio);
 
-  useEffect(() => {
-    speak(target.word);
-    return () => window.speechSynthesis?.cancel();
-  }, [target]);
+  useEffect(() => playWord(target), [target]);
 
   function choose(choice) {
     if (picked) return;
@@ -45,7 +36,7 @@ function ListenChoose({ items, pool, onResult }) {
       <p className="text-center text-lg font-semibold text-slate-700">Listen, then pick the picture</p>
       <button
         type="button"
-        onClick={() => speak(target.word)}
+        onClick={() => playWord(target)}
         className="mx-auto flex items-center gap-2 rounded-full bg-indigo-600 px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-indigo-700"
       >
         🔊 Play the word
