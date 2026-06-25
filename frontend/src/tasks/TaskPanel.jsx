@@ -1,4 +1,4 @@
-// The selected day's task list: mark each habit done/failed and tweak the
+// The selected day's task list: mark each habit done/skipped and tweak the
 // points it earned for that day. Only today is editable; other days are
 // read-only (view history, streaks, and points).
 import { useState } from "react";
@@ -76,7 +76,7 @@ export default function TaskPanel({ selected, today, state, onSetStatus, onEditP
                 className={`flex items-center gap-3 rounded-xl border p-3 transition ${
                   it.status === "done"
                     ? "border-transparent bg-slate-50/70 opacity-60"
-                    : it.status === "failed"
+                    : it.status === "skipped"
                       ? "border-rose-200 bg-rose-50/50"
                       : "border-slate-100 bg-slate-50/70"
                 }`}
@@ -98,13 +98,13 @@ export default function TaskPanel({ selected, today, state, onSetStatus, onEditP
                   <button
                     type="button"
                     className={`flex h-7 w-7 items-center justify-center rounded-lg border text-[13px] font-bold leading-none transition ${
-                      it.status === "failed"
+                      it.status === "skipped"
                         ? "border-rose-500 bg-rose-500 text-white shadow-sm"
                         : "border-slate-300 text-slate-400 hover:border-rose-500 hover:text-rose-500"
                     } ${readOnly ? "cursor-not-allowed opacity-45" : ""}`}
-                    onClick={() => !readOnly && onSetStatus(i, it.status === "failed" ? "pending" : "failed")}
+                    onClick={() => !readOnly && onSetStatus(i, it.status === "skipped" ? "pending" : "skipped")}
                     disabled={readOnly}
-                    title={readOnly ? "Read only" : "Mark failed"}
+                    title={readOnly ? "Read only" : "Mark skipped"}
                   >
                     ✕
                   </button>
@@ -113,16 +113,16 @@ export default function TaskPanel({ selected, today, state, onSetStatus, onEditP
                 <div className="min-w-0 flex-1">
                   <div
                     className={`text-sm font-medium break-words ${
-                      it.status === "done" ? "text-slate-400 line-through" : it.status === "failed" ? "text-rose-600" : "text-slate-700"
+                      it.status === "done" ? "text-slate-400 line-through" : it.status === "skipped" ? "text-rose-600" : "text-slate-700"
                     }`}
                   >
                     {it.text}
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
                     {streak > 0 && <span className="font-semibold text-amber-500">🔥 {streak}d</span>}
-                    {it.status === "failed" && (
+                    {it.status === "skipped" && (
                       <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-semibold text-rose-600">
-                        Failed
+                        Skipped
                       </span>
                     )}
                     {it.overridden && (

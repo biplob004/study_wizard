@@ -94,7 +94,7 @@ class TaskEntry(BaseModel):
     points: int = Field(default=0, description="Points the task is worth (may be negative)")
     status: str = Field(
         default="pending",
-        description="One of 'done', 'failed', 'pending'",
+        description="One of 'done', 'skipped', 'pending'",
     )
 
 
@@ -104,7 +104,8 @@ class TaskDay(BaseModel):
         description="The local calendar day this record covers (YYYY-MM-DD)",
     )
     tasks: list[TaskEntry] = Field(default_factory=list)
-    dayPoints: int = Field(default=0, description="Sum of points of tasks done that day")
+    # `dayPoints` is not stored — it is derived on read from this day's tasks
+    # so totals stay correct when a habit is deleted or its points edited.
 
 
 class TaskState(BaseModel):

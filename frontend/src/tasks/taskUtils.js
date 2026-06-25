@@ -12,7 +12,7 @@ export function findDay(data, ds) {
 export function taskStatus(day, text) {
   if (!day) return "pending";
   const t = day.tasks.find((x) => x.text === text);
-  return t && (t.status === "done" || t.status === "failed") ? t.status : "pending";
+  return t && (t.status === "done" || t.status === "skipped") ? t.status : "pending";
 }
 
 export function taskPoints(recur, day, text) {
@@ -62,11 +62,18 @@ export function dayStatus(date, state) {
   return "scheduled";
 }
 
-export function computeDayPoints(day) {
+// Day points are derived on the fly from the tasks of habits that are
+// currently in the user's recurring list. We do not trust any stored
+// `dayPoints` snapshot — iterating the current habits means deleting a habit
+// or tweaking its points automatically re-prices every past day.
+export function computeDayPoints(day, state) {
   if (!day) return 0;
+  const recurring = state ? new Set(state.recurring.map((h) => h.text)) : null;
   let total = 0;
   day.tasks.forEach((t) => {
-    if (t.status === "done") total += toNum(t.points);
+    if (t.status !== "done") return;
+    if (recurring && !recurring.has(t.text)) return;
+    total += toNum(t.points);
   });
   return total;
 }
@@ -74,14 +81,14 @@ export function computeDayPoints(day) {
 export function dayPoints(date, state) {
   const ds = isoDate(date);
   const day = findDay(state.data, ds);
-  return computeDayPoints(day);
+  return computeDayPoints(day, state);
 }
 
 export function monthPoints(year, month, state) {
   const prefix = `${year}-${String(month + 1).padStart(2, "0")}`;
   let total = 0;
   state.data.forEach((day) => {
-    if (day.date.startsWith(prefix)) total += toNum(day.dayPoints);
+    if (day.date.startsWith(prefix)) total += computeDayPoints(day, state);
   });
   return total;
 }

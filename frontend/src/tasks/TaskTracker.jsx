@@ -1,12 +1,12 @@
 // The Tasks & Habits tracker — a cross-cutting daily habit tracker (merged
 // from the standalone HabitFlow app), embedded on the landing page. Loads the
 // learner's per-day check-offs from /api/tasks/state, lets them mark each
-// habit done/failed and tweak per-day points, and saves debounced. Past/future
+// habit done/skipped and tweak per-day points, and saves debounced. Past/future
 // days are read-only; only today is editable.
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getTaskState, saveTaskState, addTaskHabit, deleteTaskHabit } from "../api/client";
 import { isoDate, startOfDay } from "./dateUtils";
-import { dayTasks, findDay, computeDayPoints } from "./taskUtils";
+import { dayTasks, findDay } from "./taskUtils";
 import Stats from "./Stats";
 import Calendar from "./Calendar";
 import TaskPanel from "./TaskPanel";
@@ -20,7 +20,7 @@ function withUpdatedDay(state, ds, fn) {
     ? { ...prevDay, tasks: prevDay.tasks.map((t) => ({ ...t })) }
     : { date: ds, tasks: [], dayPoints: 0 };
   fn(day);
-  day.dayPoints = computeDayPoints(day);
+  // `dayPoints` is now derived, not stored — see taskUtils.computeDayPoints.
   const exists = !!prevDay;
   const data = exists
     ? state.data.map((d) => (d.date === ds ? day : d))

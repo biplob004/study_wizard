@@ -81,7 +81,7 @@ CREATE TABLE IF NOT EXISTS task_entries (
     day     TEXT    NOT NULL,   -- 'YYYY-MM-DD'
     text    TEXT    NOT NULL,
     points  INTEGER NOT NULL DEFAULT 0,
-    status  TEXT    NOT NULL DEFAULT 'pending',  -- 'done' | 'failed' | 'pending'
+    status  TEXT    NOT NULL DEFAULT 'pending',  -- 'done' | 'skipped' | 'pending'
     PRIMARY KEY (user_id, day, text)
 );
 
@@ -394,11 +394,19 @@ def delete_task_habit_by_index(user_id: int, index: int) -> list[dict[str, Any]]
     ignored (no error). Returns the updated habit list.
     """
     with connect() as conn:
-        ids = [r["id"] for r in conn.execute(
-            "SELECT id FROM task_habits WHERE user_id = ? ORDER BY id ASC", (user_id,)
-        ).fetchall()]
+        ids = list(conn.execute(
+            "SELECT id, text FROM task_habits WHERE user_id = ? ORDER BY id ASC", (user_id,)
+        ).fetchall())
         if 0 <= index < len(ids):
-            conn.execute("DELETE FROM task_habits WHERE id = ?", (ids[index],))
+            row_id, text = ids[index]["id"], ids[index]["text"]
+            conn.execute("DELETE FROM task_habits WHERE id = ?", (row_id,))
+            # Cascade: drop this habit's past per-day entries so totals and
+            # streaks recompute cleanly (a re-added habit with the same name
+            # starts fresh rather than inheriting the old history).
+            conn.execute(
+                "DELETE FROM task_entries WHERE user_id = ? AND text = ?",
+                (user_id, text),
+            )
         rows = conn.execute(
             "SELECT id, text, points FROM task_habits WHERE user_id = ? ORDER BY id ASC",
             (user_id,),
@@ -406,7 +414,13 @@ def delete_task_habit_by_index(user_id: int, index: int) -> list[dict[str, Any]]
     return [{"id": r["id"], "text": r["text"], "points": r["points"]} for r in rows]
 
 def get_task_state(user_id: int) -> list[dict[str, Any]]:
-    """A user's per-day task records as ``[{date, tasks, dayPoints}]``."""
+    """A user's per-day task records as ``[{date, tasks}]``.
+
+    ``dayPoints`` is deliberately NOT included here — it is a derived value
+    (the sum of points of `done` tasks whose habit still exists), computed by
+    the frontend from the habit list. Keeping it out of storage means editing
+    or deleting a habit automatically fixes past day totals.
+    """
     with connect() as conn:
         rows = conn.execute(
             """
@@ -418,15 +432,9 @@ def get_task_state(user_id: int) -> list[dict[str, Any]]:
         ).fetchall()
     by_day: dict[str, dict[str, Any]] = {}
     for r in rows:
-        day = by_day.setdefault(
-            r["day"], {"date": r["day"], "tasks": [], "dayPoints": 0}
-        )
+        day = by_day.setdefault(r["day"], {"date": r["day"], "tasks": []})
         day["tasks"].append(
             {"text": r["text"], "points": r["points"], "status": r["status"]}
-        )
-    for day in by_day.values():
-        day["dayPoints"] = sum(
-            t["points"] for t in day["tasks"] if t["status"] == "done"
         )
     return list(by_day.values())
 
@@ -447,7 +455,9 @@ def save_task_state(user_id: int, data: list[Any]) -> None:
                 if not text:
                     continue
                 status = getattr(t, "status", None) or (t.get("status") if isinstance(t, dict) else "pending")
-                if status not in ("done", "failed", "pending"):
+                if status == "failed":
+                    status = "skipped"
+                if status not in ("done", "skipped", "pending"):
                     status = "pending"
                 points = getattr(t, "points", None)
                 if points is None and isinstance(t, dict):
