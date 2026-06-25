@@ -71,8 +71,9 @@ CREATE TABLE IF NOT EXISTS practice_exposures (
 CREATE TABLE IF NOT EXISTS focus_time (
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     day     TEXT    NOT NULL,   -- the learner's LOCAL calendar day, 'YYYY-MM-DD'
+    path    TEXT    NOT NULL DEFAULT '',  -- route path the learner was on, e.g. /course/vocab/practice
     seconds INTEGER NOT NULL DEFAULT 0,
-    PRIMARY KEY (user_id, day)
+    PRIMARY KEY (user_id, day, path)
 );
 
 CREATE TABLE IF NOT EXISTS task_entries (
@@ -127,6 +128,14 @@ def _migrate(conn: sqlite3.Connection) -> None:
             )
             """
         )
+
+    # Focus-time was originally bucketed by (user_id, day); it now also buckets
+    # by route `path` so per-page stats are navigable. Recreate the table (which
+    # also updates the primary key) while preserving prior rows under path=''.
+    focus_cols = {row[1] for row in conn.execute("PRAGMA table_info(focus_time)").fetchall()}
+    if "path" not in focus_cols:
+        conn.execute("DROP TABLE focus_time")
+        conn.executescript(SCHEMA)
 
 
 @contextmanager
@@ -288,32 +297,63 @@ def get_overall_progress(user_id: int) -> list[dict[str, Any]]:
 # frontend ticks a counter only while the tab is visible and focused, then
 # flushes the elapsed seconds here, bucketed by the learner's local calendar day.
 
-def add_focus_time(user_id: int, day: str, seconds: int) -> None:
-    """Add focused seconds to a learner's daily bucket (creating it if needed)."""
+def add_focus_time(user_id: int, day: str, seconds: int, path: str = "") -> None:
+    """Add focused seconds to a learner's (day, path) bucket (creating it if needed)."""
     with connect() as conn:
         conn.execute(
             """
-            INSERT INTO focus_time (user_id, day, seconds)
-            VALUES (?, ?, ?)
-            ON CONFLICT(user_id, day)
+            INSERT INTO focus_time (user_id, day, path, seconds)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(user_id, day, path)
             DO UPDATE SET seconds = seconds + excluded.seconds
             """,
-            (user_id, day, seconds),
+            (user_id, day, path or "", seconds),
         )
 
 
 def get_focus_time(user_id: int, since_day: str) -> list[dict[str, Any]]:
-    """Daily focused seconds for a learner on or after ``since_day`` (oldest first)."""
+    """Daily focused seconds (summed across all routes) for a learner on or after
+    ``since_day`` (oldest first). Aggregates over `path` so the dashboard's daily
+    totals stay unchanged regardless of how many routes were visited that day.
+    """
     with connect() as conn:
         rows = conn.execute(
             """
-            SELECT day, seconds FROM focus_time
+            SELECT day, SUM(seconds) AS seconds FROM focus_time
             WHERE user_id = ? AND day >= ?
+            GROUP BY day
             ORDER BY day ASC
             """,
             (user_id, since_day),
         ).fetchall()
-    return [{"day": r["day"], "seconds": r["seconds"]} for r in rows]
+    return [{"day": r["day"], "seconds": r["seconds"] or 0} for r in rows]
+
+
+def get_focus_time_by_path(user_id: int, since_day: str) -> list[dict[str, Any]]:
+    """Focused seconds per route path for a learner on or after ``since_day``
+    (oldest first). Used to build navigable per-page time stats.
+    """
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT day, path, SUM(seconds) AS seconds FROM focus_time
+            WHERE user_id = ? AND day >= ?
+            GROUP BY day, path
+            ORDER BY day ASC, path ASC
+            """,
+            (user_id, since_day),
+        ).fetchall()
+    return [{"day": r["day"], "path": r["path"], "seconds": r["seconds"] or 0} for r in rows]
+
+
+def get_focus_paths(user_id: int) -> list[str]:
+    """Distinct route paths the learner has logged focused time on, for navigation."""
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT path FROM focus_time WHERE user_id = ? ORDER BY path ASC",
+            (user_id,),
+        ).fetchall()
+    return [r["path"] for r in rows]
 
 
 # --- Tasks & habits ---------------------------------------------------------

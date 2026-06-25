@@ -137,18 +137,28 @@ export function getProgressSummary() {
 // Time spent with the site as the foreground, focused tab. The frontend ticks
 // the counter locally (only while visible + focused) and flushes here.
 
-/** Add focused seconds to the learner's bucket for a local day (YYYY-MM-DD). */
-export function recordFocusTime(day, seconds) {
+/** Add focused seconds to the learner's bucket for a local day + route path. */
+export function recordFocusTime(day, seconds, path = "") {
   return request("/api/time/heartbeat", {
     method: "POST",
     auth: true,
-    body: { day, seconds },
+    body: { day, seconds, path },
   });
 }
 
 /** Daily focused seconds over the recent window (oldest first), for the dashboard. */
 export function getDailyTime(days = 56) {
   return request(`/api/time/daily?days=${days}`, { auth: true });
+}
+
+/** Focused seconds per route path over the recent window (oldest first). */
+export function getTimeByPath(days = 56) {
+  return request(`/api/time/by-path?days=${days}`, { auth: true });
+}
+
+/** Distinct route paths the learner has logged focused time on, for navigation. */
+export function getTimePaths() {
+  return request("/api/time/paths", { auth: true });
 }
 
 // --- Tasks & habits ---------------------------------------------------------

@@ -32,13 +32,14 @@ function Root() {
 }
 
 function AppShell() {
-  // Count time spent on the site for the whole signed-in session, regardless of
-  // which screen is showing (only while this tab is the focused foreground tab).
-  useTimeTracker(true);
-
   // A stack of routes; the last one is what's shown. Pushing navigates deeper.
   const [stack, setStack] = useState([{ name: "home" }]);
   const route = stack[stack.length - 1];
+
+  // Only count focused time on course screens (not the home/dashboard), and
+  // bucket it by route path so per-page stats are easy to navigate to.
+  const { timeEnabled, timePath } = routeMeta(route);
+  useTimeTracker(timeEnabled, timePath);
 
   const push = useCallback((entry) => setStack((s) => [...s, entry]), []);
   const back = useCallback(() => setStack((s) => (s.length > 1 ? s.slice(0, -1) : s)), []);
@@ -74,5 +75,21 @@ function Screen({ route, push, home }) {
     }
     default:
       return null;
+  }
+}
+
+/** Whether to track time for `route`, and the path string to bucket it under. */
+function routeMeta(route) {
+  switch (route.name) {
+    case "course":
+      return { timeEnabled: true, timePath: `/course/${route.course?.id ?? "_"}` };
+    case "activity":
+      return {
+        timeEnabled: true,
+        timePath: `/course/${route.course?.id ?? "_"}/${route.activity ?? "_"}`,
+      };
+    default:
+      // home (Landing/dashboard) is NOT counted.
+      return { timeEnabled: false, timePath: "/" };
   }
 }

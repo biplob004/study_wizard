@@ -135,8 +135,19 @@ class FocusHeartbeat(BaseModel):
         le=86_400,
         description="Focused seconds to add to that day's bucket",
     )
+    path: str = Field(
+        default="",
+        max_length=256,
+        description="Route path the learner was on (e.g. /course/vocab/practice); '' if unknown",
+    )
 
 
 class FocusDay(BaseModel):
     day: str
+    seconds: int
+
+
+class FocusPathDay(BaseModel):
+    day: str
+    path: str
     seconds: int
