@@ -21,6 +21,7 @@ from .courses import all_courses, catalog, mount_course_routers
 from .routers import auth as auth_router
 from .routers import progress as progress_router
 from .routers import time as time_router
+from .tasks import router as tasks_router
 
 # The .env lives at the project root (one level above backend/).
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -62,6 +63,7 @@ def _mount_course_static() -> None:
 app.include_router(auth_router.router)       # /api/auth/*     — accounts & sessions
 app.include_router(progress_router.router)   # /api/progress/* — cross-course overview
 app.include_router(time_router.router)       # /api/time/*     — focus-time tracking
+app.include_router(tasks_router.router)      # /api/tasks/*    — habit & task tracker
 
 # Course catalog and per-course routers + static media.
 mount_course_routers(app)

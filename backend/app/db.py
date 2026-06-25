@@ -74,6 +74,23 @@ CREATE TABLE IF NOT EXISTS focus_time (
     seconds INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (user_id, day)
 );
+
+CREATE TABLE IF NOT EXISTS task_entries (
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    day     TEXT    NOT NULL,   -- 'YYYY-MM-DD'
+    text    TEXT    NOT NULL,
+    points  INTEGER NOT NULL DEFAULT 0,
+    status  TEXT    NOT NULL DEFAULT 'pending',  -- 'done' | 'failed' | 'pending'
+    PRIMARY KEY (user_id, day, text)
+);
+
+CREATE TABLE IF NOT EXISTS task_habits (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    text       TEXT    NOT NULL,
+    points     INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
 """
 
 
@@ -90,6 +107,26 @@ def _migrate(conn: sqlite3.Connection) -> None:
     cols = {row[1] for row in conn.execute("PRAGMA table_info(practice_results)").fetchall()}
     if "activity" not in cols:
         conn.execute("ALTER TABLE practice_results ADD COLUMN activity TEXT NOT NULL DEFAULT 'practice'")
+
+    # The task_entries table was originally course-scoped (with a NOT NULL
+    # course_id) when the tracker was a course plugin; it's now a cross-cutting
+    # feature scoped by user only. Recreate it without course_id if the old
+    # column is still present so fresh saves don't hit the NOT NULL constraint.
+    task_cols = {row[1] for row in conn.execute("PRAGMA table_info(task_entries)").fetchall()}
+    if "course_id" in task_cols:
+        conn.execute("DROP TABLE task_entries")
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS task_entries (
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                day     TEXT    NOT NULL,
+                text    TEXT    NOT NULL,
+                points  INTEGER NOT NULL DEFAULT 0,
+                status  TEXT    NOT NULL DEFAULT 'pending',
+                PRIMARY KEY (user_id, day, text)
+            )
+            """
+        )
 
 
 @contextmanager
@@ -277,3 +314,113 @@ def get_focus_time(user_id: int, since_day: str) -> list[dict[str, Any]]:
             (user_id, since_day),
         ).fetchall()
     return [{"day": r["day"], "seconds": r["seconds"]} for r in rows]
+
+
+# --- Tasks & habits ---------------------------------------------------------
+# Per-user, per-day habit check-offs for the Tasks & Habits tracker (a
+# cross-cutting feature like focus-time, not a course). The habit *definitions*
+# are also per-user now — each learner owns and edits their own list, stored in
+# the ``task_habits`` table (seeded from app/tasks/data/tasks.json defaults when
+# a user registers); per-day check-offs live in ``task_entries``.
+
+def get_task_habits(user_id: int) -> list[dict[str, Any]]:
+    """A user's recurring habit definitions, oldest first (insertion order)."""
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT id, text, points FROM task_habits WHERE user_id = ? ORDER BY id ASC",
+            (user_id,),
+        ).fetchall()
+    return [{"id": r["id"], "text": r["text"], "points": r["points"]} for r in rows]
+
+
+def add_task_habit(user_id: int, text: str, points: int) -> dict[str, Any]:
+    """Append a habit for a user. Returns the new habit row."""
+    with connect() as conn:
+        cur = conn.execute(
+            "INSERT INTO task_habits (user_id, text, points) VALUES (?, ?, ?)",
+            (user_id, text, points),
+        )
+        row = conn.execute(
+            "SELECT id, text, points FROM task_habits WHERE id = ?", (cur.lastrowid,)
+        ).fetchone()
+    return {"id": row["id"], "text": row["text"], "points": row["points"]}
+
+
+def delete_task_habit_by_index(user_id: int, index: int) -> list[dict[str, Any]]:
+    """Delete a user's habit at the given index (0-based, oldest-first).
+
+    Indexes refer to the position in the list returned by ``get_task_habits``
+    so the frontend's positional delete keeps working. Out-of-range indexes are
+    ignored (no error). Returns the updated habit list.
+    """
+    with connect() as conn:
+        ids = [r["id"] for r in conn.execute(
+            "SELECT id FROM task_habits WHERE user_id = ? ORDER BY id ASC", (user_id,)
+        ).fetchall()]
+        if 0 <= index < len(ids):
+            conn.execute("DELETE FROM task_habits WHERE id = ?", (ids[index],))
+        rows = conn.execute(
+            "SELECT id, text, points FROM task_habits WHERE user_id = ? ORDER BY id ASC",
+            (user_id,),
+        ).fetchall()
+    return [{"id": r["id"], "text": r["text"], "points": r["points"]} for r in rows]
+
+def get_task_state(user_id: int) -> list[dict[str, Any]]:
+    """A user's per-day task records as ``[{date, tasks, dayPoints}]``."""
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT day, text, points, status FROM task_entries
+            WHERE user_id = ?
+            ORDER BY day ASC, rowid ASC
+            """,
+            (user_id,),
+        ).fetchall()
+    by_day: dict[str, dict[str, Any]] = {}
+    for r in rows:
+        day = by_day.setdefault(
+            r["day"], {"date": r["day"], "tasks": [], "dayPoints": 0}
+        )
+        day["tasks"].append(
+            {"text": r["text"], "points": r["points"], "status": r["status"]}
+        )
+    for day in by_day.values():
+        day["dayPoints"] = sum(
+            t["points"] for t in day["tasks"] if t["status"] == "done"
+        )
+    return list(by_day.values())
+
+
+def save_task_state(user_id: int, data: list[Any]) -> None:
+    """Replace a user's task records with the given per-day entries."""
+    with connect() as conn:
+        conn.execute("DELETE FROM task_entries WHERE user_id = ?", (user_id,))
+        for day in data:
+            ds = getattr(day, "date", None) or (day.get("date") if isinstance(day, dict) else None)
+            if not ds:
+                continue
+            tasks = getattr(day, "tasks", None)
+            if tasks is None and isinstance(day, dict):
+                tasks = day.get("tasks", [])
+            for t in tasks or []:
+                text = getattr(t, "text", None) or (t.get("text") if isinstance(t, dict) else None)
+                if not text:
+                    continue
+                status = getattr(t, "status", None) or (t.get("status") if isinstance(t, dict) else "pending")
+                if status not in ("done", "failed", "pending"):
+                    status = "pending"
+                points = getattr(t, "points", None)
+                if points is None and isinstance(t, dict):
+                    points = t.get("points", 0)
+                try:
+                    points = int(points or 0)
+                except (TypeError, ValueError):
+                    points = 0
+                conn.execute(
+                    """
+                    INSERT OR REPLACE INTO task_entries
+                        (user_id, day, text, points, status)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (user_id, ds, text, points, status),
+                )

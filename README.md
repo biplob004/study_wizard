@@ -95,6 +95,29 @@ Add the course folder, export a descriptor from `index.js`, and register it in
 
 All exercise types run entirely in the browser, so the app is fully playable without any API key.
 
+## Tasks & Habits tracker
+
+A cross-cutting daily habit tracker (merged from a standalone HabitFlow app) — **not a course**.
+Like focus-time, it lives under `/api/tasks`, is scoped to the signed-in user, and is shown on the
+landing page below the course catalog. Check off habits each day, build streaks, and earn points;
+past days are read-only.
+
+```
+backend/app/tasks/        # self-contained package owning its router
+  router.py               # /api/tasks/state + /api/tasks/recurring
+frontend/src/tasks/       # TaskTracker + Stats + Calendar + TaskPanel + utils
+```
+
+- **Habit definitions** are per-user rows in the `task_habits` SQLite table (text +
+  points), scoped by `user_id`. A new account starts with an empty list; the learner
+  adds their own habits via the "＋ Add habit" popup (and removes them from the task
+  panel) — every habit is owned by and visible only to that user.
+- **Per-day check-offs** persist in the `task_entries` SQLite table, scoped by user only.
+- **API**: `GET /api/tasks/state` → `{ recurring, data: [{date, tasks, dayPoints}] }`;
+  `POST /api/tasks/state` with `{ data }` to save check-offs;
+  `POST /api/tasks/recurring` with `{ text, points }` to add a habit;
+  `DELETE /api/tasks/recurring/{index}` to remove one (all auth required).
+
 ## Running it
 
 ### Option A — Docker (one command)
@@ -134,6 +157,8 @@ API endpoints:
 - `GET  /api/progress/summary` — cross-course progress overview (auth required)
 - `POST /api/courses/vocabulary/progress/learned` · `practice`,
   `GET /api/courses/vocabulary/progress/summary` · `exposures` — per-course progress (auth required)
+- `GET /api/tasks/state` · `POST /api/tasks/state` — daily habit tracker (auth required)
+- `POST /api/tasks/recurring` · `DELETE /api/tasks/recurring/{index}` — add/remove habits (auth required)
 
 Static media is served per course at `/static/courses/{course_id}/images/...` and
 `/static/courses/{course_id}/audio/...`.

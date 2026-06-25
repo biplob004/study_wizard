@@ -87,6 +87,42 @@ class OverallProgressItem(BaseModel):
     items_learned: int
 
 
+# --- Tasks & habits ---------------------------------------------------------
+
+class TaskEntry(BaseModel):
+    text: str = Field(description="The habit/task text")
+    points: int = Field(default=0, description="Points the task is worth (may be negative)")
+    status: str = Field(
+        default="pending",
+        description="One of 'done', 'failed', 'pending'",
+    )
+
+
+class TaskDay(BaseModel):
+    date: str = Field(
+        pattern=r"^\d{4}-\d{2}-\d{2}$",
+        description="The local calendar day this record covers (YYYY-MM-DD)",
+    )
+    tasks: list[TaskEntry] = Field(default_factory=list)
+    dayPoints: int = Field(default=0, description="Sum of points of tasks done that day")
+
+
+class TaskState(BaseModel):
+    # `recurring` is the user's per-user habit list echoed back by the API (read
+    # from the task_habits table); on save it is ignored — habits are edited via
+    # the /api/tasks/recurring endpoints. Only `data` is persisted on this route.
+    recurring: list[TaskEntry] = Field(default_factory=list)
+    data: list[TaskDay] = Field(default_factory=list)
+
+
+class TaskHabitRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=120, description="The habit/task name")
+    points: int = Field(
+        default=1, ge=-100000, le=100000,
+        description="Points the habit is worth (may be negative for bad habits)",
+    )
+
+
 # --- Focus time -------------------------------------------------------------
 
 class FocusHeartbeat(BaseModel):

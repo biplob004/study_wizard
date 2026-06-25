@@ -150,3 +150,32 @@ export function recordFocusTime(day, seconds) {
 export function getDailyTime(days = 56) {
   return request(`/api/time/daily?days=${days}`, { auth: true });
 }
+
+// --- Tasks & habits ---------------------------------------------------------
+// A cross-cutting daily habit tracker (not a course). Both the habit list and
+// the per-day check-offs are per-user — the server stores each learner's own
+// set in the task_habits / task_entries SQLite tables.
+
+/** Fetch the learner's tracker state: { recurring, data: [{date, tasks, dayPoints}] }. */
+export function getTaskState() {
+  return request("/api/tasks/state", { auth: true });
+}
+
+/** Persist the learner's per-day check-offs (`recurring` is config, ignored). */
+export function saveTaskState(data) {
+  return request("/api/tasks/state", { method: "POST", auth: true, body: { data } });
+}
+
+/** Add a recurring habit for the signed-in user (per-user, stored in SQLite). */
+export function addTaskHabit(text, points) {
+  return request("/api/tasks/recurring", {
+    method: "POST",
+    auth: true,
+    body: { text, points },
+  });
+}
+
+/** Remove a recurring habit by index (per-user, stored in SQLite). */
+export function deleteTaskHabit(index) {
+  return request(`/api/tasks/recurring/${index}`, { method: "DELETE", auth: true });
+}

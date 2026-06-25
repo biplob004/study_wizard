@@ -6,6 +6,7 @@ import { getCourses, getProgressSummary, getDailyTime } from "../api/client";
 import { useAuth } from "../auth/context";
 import SelectionCard from "../components/SelectionCard";
 import { buildTimeSummary, formatDuration } from "../lib/time";
+import TaskTracker from "../tasks/TaskTracker";
 
 const ACCENTS = [
   "from-indigo-500 to-cyan-400",
@@ -65,6 +66,10 @@ export default function Landing({ onOpenCourse }) {
             );
           })}
         </div>
+      </section>
+
+      <section className="mt-12 rounded-3xl bg-white/60 p-6 shadow-xl ring-1 ring-slate-100 backdrop-blur">
+        <TaskTracker />
       </section>
 
       <Footer />
