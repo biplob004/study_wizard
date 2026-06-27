@@ -1,27 +1,56 @@
 // A course's home: shows the course's own tracking details plus its activities
 // (Learn / Practice) directly — no extra module nesting in between.
 import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { getCourseProgress } from "../api/client";
+import { useCourse } from "../catalog/hooks";
 import { getCoursePlugin } from "../courses/registry";
 import PageHeader from "../components/PageHeader";
 import SelectionCard from "../components/SelectionCard";
 
 const ACCENTS = ["from-indigo-500 to-cyan-400", "from-fuchsia-500 to-amber-400", "from-emerald-500 to-teal-400"];
 
-export default function CourseScreen({ course, onStartActivity }) {
+export default function CourseScreen() {
+  const { courseId } = useParams();
+  const navigate = useNavigate();
+  const course = useCourse(courseId);
   const [progress, setProgress] = useState(null);
-  const plugin = getCoursePlugin(course.id);
 
   // Collect all activity ids across the course's modules (preserving order).
-  const activityIds = (course.modules ?? [])
+  const activityIds = (course?.modules ?? [])
     .filter((m) => m.available)
     .flatMap((m) => m.activities ?? []);
 
   useEffect(() => {
+    if (!course) return;
     getCourseProgress(course.id)
       .then(setProgress)
       .catch(() => setProgress(null));
-  }, [course.id]);
+  }, [course]);
+
+  if (course === undefined) {
+    return (
+      <div className="mx-auto w-full max-w-5xl px-4 py-16 text-center text-slate-400">
+        Loading course…
+      </div>
+    );
+  }
+  if (course === null) {
+    return (
+      <div className="mx-auto w-full max-w-5xl px-4 py-16 text-center text-slate-500">
+        <p>This course doesn’t exist.</p>
+        <button
+          onClick={() => navigate("/")}
+          className="mt-4 rounded-xl bg-indigo-600 px-5 py-2 font-semibold text-white hover:bg-indigo-700"
+        >
+          Back to dashboard
+        </button>
+      </div>
+    );
+  }
+
+  const plugin = getCoursePlugin(course.id);
+  const startActivity = (id) => navigate(`/courses/${course.id}/${id}`);
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8">
@@ -45,7 +74,7 @@ export default function CourseScreen({ course, onStartActivity }) {
                 blurb={activity.blurb}
                 cta={activity.cta}
                 accent={ACCENTS[i % ACCENTS.length]}
-                onClick={() => onStartActivity(id)}
+                onClick={() => startActivity(id)}
               />
             );
           })}

@@ -1,106 +1,79 @@
-// Tracks how long the learner keeps THIS tab as the foreground, focused window,
-// AND is actively interacting with it (mouse, keyboard, scroll, touch). When the
-// page is open but the learner goes idle (no activity for IDLE_TIMEOUT_MS), the
-// counter pauses until the next interaction resumes it.
+// Focus-time tracker. One rule:
+//   accrue a second while the tab is the visible, focused, non-idle window;
+//   flush the accrued seconds to the backend every 20s (or when the tab loses
+//   focus / is hidden / unmounts), bucketed by the learner's local day.
 //
-// Only course screens enable the tracker — the home/dashboard route isn't
-// counted. The current route's `path` is included in each heartbeat so the
-// backend can bucket time by location, making it easy to navigate per-page stats.
-//
-// We tick a counter once a second, but only while the page is visible, focused,
-// AND not idle. The accumulated seconds are flushed periodically and whenever the
-// tab loses focus or is hidden, bucketed by the learner's local calendar day.
-import { useEffect, useRef } from "react";
+// WHICH PAGES ARE TRACKED (and the time bucket — always the full pathname so
+// time-on-page matches the URL the learner sees):
+//   add/remove a prefix below to control what counts. The per-item id (?id=1)
+//   is intentionally NOT part of the bucket.
+const TRACKED_PREFIXES = [
+  "/courses/", // every course page (course overview + activities)
+];
+
+/** Returns the time bucket for `pathname`, or `null` when the page isn't tracked. */
+export function trackedPath(pathname) {
+  if (typeof pathname !== "string") return null;
+  return TRACKED_PREFIXES.some((p) => pathname.startsWith(p)) ? pathname : null;
+}
+
+import { useEffect } from "react";
 import { recordFocusTime } from "../api/client";
 import { localDayKey } from "./time";
 
+const TICK_MS = 1000;
 const FLUSH_INTERVAL_MS = 20_000;
-const IDLE_TIMEOUT_MS = 60_000; // pause counting after 60s of no interaction
+const IDLE_TIMEOUT_MS = 60_000;
 
-const ACTIVITY_EVENTS = [
-  "mousemove",
-  "mousedown",
-  "keydown",
-  "scroll",
-  "touchstart",
-  "wheel",
-];
+const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "scroll", "touchstart", "wheel"];
 
-/**
- * Run the focus-time tracker for as long as `enabled` is true.
- *
- * @param {boolean} enabled  - only count while this is true (course screens only)
- * @param {string}  path     - the current route path, bucketed per heartbeat
- */
-export function useTimeTracker(enabled, path) {
-  // Keep the latest path in a ref so the tick/flush closures see updates without
-  // having to re-create the whole effect on every navigation.
-  const pathRef = useRef(path);
+export function useTimeTracker(path) {
   useEffect(() => {
-    pathRef.current = path;
-  }, [path]);
+    if (!path) return undefined;
 
-  useEffect(() => {
-    if (!enabled) return undefined;
-
-    let pending = 0; // focused seconds counted but not yet sent
-    let lastActivity = Date.now(); // timestamp of the most recent interaction
+    let pending = 0;
+    let lastActivity = Date.now();
+    let lastFlush = Date.now();
 
     const isIdle = () => Date.now() - lastActivity > IDLE_TIMEOUT_MS;
     const isActive = () =>
-      document.visibilityState === "visible" &&
-      document.hasFocus() &&
-      !isIdle();
+      document.visibilityState === "visible" && document.hasFocus() && !isIdle();
+
+    const flush = () => {
+      lastFlush = Date.now();
+      if (pending <= 0) return;
+      const seconds = pending;
+      pending = 0;
+      recordFocusTime(localDayKey(), seconds, path).catch(() => {
+        pending += seconds; // retry on the next flush
+      });
+    };
 
     const noteActivity = () => {
       lastActivity = Date.now();
     };
 
+    // One interval: accrue while active, flush pending on schedule.
     const tick = setInterval(() => {
       if (isActive()) pending += 1;
-    }, 1000);
+      if (pending > 0 && Date.now() - lastFlush >= FLUSH_INTERVAL_MS) flush();
+    }, TICK_MS);
 
-    const flush = () => {
-      if (pending <= 0) return;
-      const seconds = pending;
-      pending = 0;
-      // On failure, put the seconds back so the next flush retries them.
-      recordFocusTime(localDayKey(), seconds, pathRef.current).catch(() => {
-        pending += seconds;
-      });
-    };
-
-    const onHidden = () => {
-      // Flush the moment we stop counting (tab hidden or window blurred).
-      if (!isActive()) flush();
-    };
-
-    const onIdle = () => {
-      // Stopped interacting — flush whatever was counted so far.
-      if (isIdle()) flush();
-    };
-
-    const flushTimer = setInterval(flush, FLUSH_INTERVAL_MS);
-    const idleTimer = setInterval(onIdle, IDLE_TIMEOUT_MS);
-
+    // Flush immediately when the tab stops being the focused, visible window.
     for (const evt of ACTIVITY_EVENTS) {
       window.addEventListener(evt, noteActivity, { passive: true });
     }
-    window.addEventListener("blur", onHidden);
-    document.addEventListener("visibilitychange", onHidden);
+    window.addEventListener("blur", flush);
+    document.addEventListener("visibilitychange", flush);
     window.addEventListener("pagehide", flush);
 
     return () => {
       clearInterval(tick);
-      clearInterval(flushTimer);
-      clearInterval(idleTimer);
-      for (const evt of ACTIVITY_EVENTS) {
-        window.removeEventListener(evt, noteActivity);
-      }
-      window.removeEventListener("blur", onHidden);
-      document.removeEventListener("visibilitychange", onHidden);
+      for (const evt of ACTIVITY_EVENTS) window.removeEventListener(evt, noteActivity);
+      window.removeEventListener("blur", flush);
+      document.removeEventListener("visibilitychange", flush);
       window.removeEventListener("pagehide", flush);
       flush();
     };
-  }, [enabled]);
+  }, [path]);
 }

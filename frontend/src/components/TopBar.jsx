@@ -1,9 +1,16 @@
-// Persistent top bar shown while signed in: a back button (when you can go back),
-// the app name, and the current user with a logout action.
+// Persistent top bar shown while signed in: a back button (when you're not on
+// home), the app name, and the current user with a logout action.
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/context";
 
-export default function TopBar({ canGoBack, onBack, onHome }) {
+// Home routes where the back button is hidden.
+const HOME_PATHS = new Set(["/", "/dashboard"]);
+
+export default function TopBar() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const canGoBack = !HOME_PATHS.has(pathname);
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/70 backdrop-blur">
@@ -12,7 +19,7 @@ export default function TopBar({ canGoBack, onBack, onHome }) {
           {canGoBack && (
             <button
               type="button"
-              onClick={onBack}
+              onClick={() => navigate(-1)}
               className="rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100 hover:text-indigo-600"
             >
               ← Back
@@ -20,7 +27,7 @@ export default function TopBar({ canGoBack, onBack, onHome }) {
           )}
           <button
             type="button"
-            onClick={onHome}
+            onClick={() => navigate("/")}
             className="flex items-center gap-2 rounded-lg px-1 text-sm font-extrabold text-slate-800"
           >
             <span className="text-lg">🧙‍♂️</span>

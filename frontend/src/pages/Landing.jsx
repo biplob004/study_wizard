@@ -2,8 +2,10 @@
 // embedded per-course progress overview and the course catalog. Logged-in users
 // see their stats and a "Continue" path; the page is the home screen.
 import { useEffect, useState } from "react";
-import { getCourses, getProgressSummary, getDailyTime } from "../api/client";
+import { useNavigate } from "react-router-dom";
+import { getProgressSummary, getDailyTime } from "../api/client";
 import { useAuth } from "../auth/context";
+import { useCatalog } from "../catalog/hooks";
 import SelectionCard from "../components/SelectionCard";
 import { buildTimeSummary, formatDuration } from "../lib/time";
 import TaskTracker from "../tasks/TaskTracker";
@@ -16,22 +18,24 @@ const ACCENTS = [
   "from-violet-500 to-blue-400",
 ];
 
-export default function Landing({ onOpenCourse }) {
+export default function Landing() {
   const { user } = useAuth();
-  const [courses, setCourses] = useState([]);
+  const navigate = useNavigate();
+  const { courses, error: catalogError } = useCatalog();
   const [progress, setProgress] = useState([]); // [{course_id, ...}]
   const [timeRows, setTimeRows] = useState([]); // [{day, seconds}]
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    Promise.all([getCourses(), getProgressSummary(), getDailyTime()])
-      .then(([c, p, t]) => {
-        setCourses(c);
+    Promise.all([getProgressSummary(), getDailyTime()])
+      .then(([p, t]) => {
         setProgress(p);
         setTimeRows(t);
       })
       .catch(() => setError(true));
   }, []);
+
+  const openCourse = (course) => navigate(`/courses/${course.id}`);
 
   const progressById = new Map(progress.map((p) => [p.course_id, p]));
 
@@ -39,7 +43,7 @@ export default function Landing({ onOpenCourse }) {
     <div className="mx-auto w-full max-w-5xl px-4 py-10">
       <Hero user={user} />
 
-      {error ? (
+      {error || catalogError ? (
         <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-medium text-rose-600">
           Couldn’t load your courses. Make sure the backend is running.
         </p>
@@ -50,10 +54,10 @@ export default function Landing({ onOpenCourse }) {
       <section className="mt-12">
         <div className="mb-4 flex items-end justify-between">
           <h2 className="text-lg font-bold text-slate-800">Courses</h2>
-          <span className="text-sm text-slate-400">{courses.length} available</span>
+          <span className="text-sm text-slate-400">{(courses ?? []).length} available</span>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {courses.map((course, i) => {
+          {(courses ?? []).map((course, i) => {
             const p = progressById.get(course.id);
             return (
               <CourseCard
@@ -61,10 +65,13 @@ export default function Landing({ onOpenCourse }) {
                 course={course}
                 progress={p}
                 accent={ACCENTS[i % ACCENTS.length]}
-                onOpen={() => onOpenCourse(course)}
+                onOpen={() => openCourse(course)}
               />
             );
           })}
+          {courses === null && !catalogError && (
+            <p className="col-span-full text-center text-sm text-slate-400">Loading courses…</p>
+          )}
         </div>
       </section>
 
