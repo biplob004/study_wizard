@@ -1,6 +1,5 @@
 // Exercise 7 — Listen & choose.
-// Plays the pre-generated clip for the word (with a speech-synthesis fallback);
-// pick the matching image.
+// Plays the pre-generated clip for the word; pick the matching image.
 import { useEffect, useMemo, useState } from "react";
 import ImageBox from "../components/ImageBox";
 import { pickDistractors, shuffle } from "../lib/random";
@@ -13,7 +12,7 @@ function ListenChoose({ items, pool, onResult }) {
     [target, pool],
   );
   const [picked, setPicked] = useState(null);
-  const supported = typeof window !== "undefined" && (!!window.speechSynthesis || !!target.audio);
+  const supported = !!target.audio;
 
   useEffect(() => playWord(target), [target]);
 

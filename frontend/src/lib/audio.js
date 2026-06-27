@@ -1,6 +1,6 @@
-// Plays vocabulary audio. Prefers a pre-generated clip served by the backend (an
-// audio URL); if that file is missing or playback fails, it falls back to the
-// browser's built-in speech synthesis so learners still hear something.
+// Plays vocabulary audio from a pre-generated clip served by the backend (an audio
+// URL). If the clip is missing or fails to load, playback is simply silent — there
+// is no browser speech-synthesis fallback, so learners only ever hear the real clip.
 //
 // Only one clip plays at a time (starting a new one stops the current).
 
@@ -13,66 +13,46 @@ function stopCurrent() {
     a.pause();
     a.src = "";
   }
-  if (typeof window !== "undefined") window.speechSynthesis?.cancel();
-}
-
-function speak(text, onEnded) {
-  stopCurrent();
-  if (typeof window === "undefined" || !window.speechSynthesis) {
-    onEnded?.();
-    return;
-  }
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.rate = 0.9;
-  if (onEnded) utter.addEventListener("end", onEnded, { once: true });
-  window.speechSynthesis.speak(utter);
 }
 
 /**
- * Play an audio clip from a URL, falling back to browser TTS on failure.
+ * Play an audio clip from a URL. Missing URL or a load error is a no-op (silent).
  * @param {string|null|undefined} url  The clip URL (may be missing).
- * @param {{fallbackText?: string, onEnded?: () => void}} [opts]
- *   fallbackText: spoken via TTS if the URL is absent or fails to load.
- *   onEnded:      called once when playback finishes (audio or TTS).
+ * @param {{onEnded?: () => void}} [opts]
+ *   onEnded: called once when playback finishes (or immediately if there's nothing to play).
  * @returns {() => void} a cleanup function that stops whatever is playing.
  */
-export function playAudioUrl(url, { fallbackText = "", onEnded } = {}) {
+export function playAudioUrl(url, { onEnded } = {}) {
   stopCurrent();
 
-  if (url) {
-    const audio = new Audio(url);
-    currentAudio = audio;
-    let finished = false;
-    const stop = (fireEnded) => {
-      if (finished) return;
-      finished = true;
-      if (currentAudio === audio) currentAudio = null;
-      audio.pause();
-      audio.src = "";
-      if (typeof window !== "undefined") window.speechSynthesis?.cancel();
-      if (fireEnded) onEnded?.();
-    };
-    // Fall back to TTS only on a genuine load error — not when we abort playback.
-    audio.addEventListener("error", () => {
-      if (currentAudio !== audio) return;
-      stop(false);
-      if (fallbackText) speak(fallbackText, onEnded);
-      else onEnded?.();
-    }, { once: true });
-    audio.addEventListener("ended", () => stop(true), { once: true });
-    audio.play().catch((err) => {
-      if (err?.name === "AbortError") return; // intentional pause/cleanup
-      if (currentAudio !== audio) return;
-      stop(false);
-      if (fallbackText) speak(fallbackText, onEnded);
-      else onEnded?.();
-    });
-    return () => stop(false);
+  if (!url) {
+    onEnded?.();
+    return stopCurrent;
   }
 
-  if (fallbackText) speak(fallbackText, onEnded);
-  else onEnded?.();
-  return stopCurrent;
+  const audio = new Audio(url);
+  currentAudio = audio;
+  let finished = false;
+  const stop = (fireEnded) => {
+    if (finished) return;
+    finished = true;
+    if (currentAudio === audio) currentAudio = null;
+    audio.pause();
+    audio.src = "";
+    if (fireEnded) onEnded?.();
+  };
+  // A genuine load error ends playback silently (no TTS fallback).
+  audio.addEventListener("error", () => {
+    if (currentAudio !== audio) return;
+    stop(true);
+  }, { once: true });
+  audio.addEventListener("ended", () => stop(true), { once: true });
+  audio.play().catch((err) => {
+    if (err?.name === "AbortError") return; // intentional pause/cleanup
+    if (currentAudio !== audio) return;
+    stop(true);
+  });
+  return () => stop(false);
 }
 
 /**
@@ -83,5 +63,5 @@ export function playAudioUrl(url, { fallbackText = "", onEnded } = {}) {
  */
 export function playWord(item, { onEnded } = {}) {
   if (!item) return () => {};
-  return playAudioUrl(item.audio, { fallbackText: item.word, onEnded });
+  return playAudioUrl(item.audio, { onEnded });
 }

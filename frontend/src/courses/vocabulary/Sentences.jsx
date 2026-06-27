@@ -39,9 +39,9 @@ const Sentences = forwardRef(function Sentences({ item }, ref) {
     latestRef.current = sentences;
   }, [sentences]);
 
-  const play = useCallback((url, fallbackText) => {
+  const play = useCallback((url) => {
     stopRef.current();
-    stopRef.current = playAudioUrl(url, { fallbackText });
+    stopRef.current = playAudioUrl(url);
   }, []);
 
   // Play the first sentence's audio. Called by the parent after the word finishes;
@@ -52,7 +52,7 @@ const Sentences = forwardRef(function Sentences({ item }, ref) {
       pendingFirstRef.current = true;
       return;
     }
-    play(first.sentenceAudio, first.sentence);
+    play(first.sentenceAudio);
   }, [play]);
 
   useImperativeHandle(ref, () => ({ playFirst }), [playFirst]);
@@ -70,7 +70,7 @@ const Sentences = forwardRef(function Sentences({ item }, ref) {
         setStatus("ready");
         if (pendingFirstRef.current) {
           pendingFirstRef.current = false;
-          if (list[0]) play(list[0].sentenceAudio, list[0].sentence);
+          if (list[0]) play(list[0].sentenceAudio);
         }
       })
       .catch(() => alive && setStatus("error"));
@@ -104,15 +104,14 @@ const Sentences = forwardRef(function Sentences({ item }, ref) {
   const playKind = async (sentence, kind) => {
     setError("");
     if (kind === "sentence" && sentence.sentenceAudio) {
-      play(sentence.sentenceAudio, sentence.sentence);
+      play(sentence.sentenceAudio);
       return;
     }
-    const fallback = sentence[kind] || sentence.sentence;
     const key = `${sentence.id}:${kind}`;
     setBusyKey(key);
     try {
       const { audio } = await getSentenceAudio(COURSE_ID, item.id, sentence.id, kind);
-      play(audio, fallback);
+      play(audio);
     } catch (err) {
       setError(err.message || "Couldn’t play that audio.");
     } finally {
