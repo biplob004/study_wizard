@@ -15,6 +15,9 @@ services:
       # Optional — only the two typed exercises use it. Without it they fall back
       # to tolerant string matching. Set it in a root .env file or your shell.
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      # Required for vocabulary example sentences + their audio (Sarvam AI does both
+      # the text generation and the text-to-speech). Read from the root .env file.
+      - SARVAMAI_API_KEY=${SARVAMAI_API_KEY:-}
     volumes:
       # Edit vocabulary.json or drop images here without rebuilding the image.
       - ./backend/app/courses/vocabulary/data:/app/app/courses/vocabulary/data

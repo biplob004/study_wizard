@@ -5,9 +5,10 @@
 //  - Card:    one large card with the picture and name; the word auto-plays on open
 //             and on every prev/next move. Arrow keys work too.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getCourseContent, recordLearned } from "../../api/client";
+import { getCourseContent, recordLearned, getSentences } from "../../api/client";
 import { playWord } from "../../lib/audio";
 import ImageBox from "../../components/ImageBox";
+import Sentences from "./Sentences";
 
 const COURSE_ID = "vocabulary";
 
@@ -17,6 +18,8 @@ export default function Learn() {
   const [openIndex, setOpenIndex] = useState(null); // null = gallery view
   const stopRef = useRef(() => {});
   const recordedRef = useRef(new Set()); // word ids already saved this session
+  const sentencesRef = useRef(null); // imperative handle into the Sentences panel
+  const prefetchedRef = useRef(new Set()); // word ids whose sentences we've warmed
 
   useEffect(() => {
     getCourseContent(COURSE_ID)
@@ -27,23 +30,39 @@ export default function Learn() {
       .catch(() => setPhase("error"));
   }, []);
 
-  const play = useCallback((item) => {
+  const play = useCallback((item, opts) => {
     stopRef.current();
-    stopRef.current = playWord(item);
+    stopRef.current = playWord(item, opts);
   }, []);
 
-  // Auto-play whenever a card is open and the index changes, and record the word as
-  // studied (once per session per word — the backend also dedupes).
+  // Auto-play whenever a card is open and the index changes (the word, then the
+  // first sentence), and record the word as studied (once per session per word —
+  // the backend also dedupes).
   useEffect(() => {
     if (openIndex == null) return undefined;
     const item = items[openIndex];
-    play(item);
+    play(item, { onEnded: () => sentencesRef.current?.playFirst() });
     if (item && !recordedRef.current.has(item.id)) {
       recordedRef.current.add(item.id);
       recordLearned(COURSE_ID, item.id).catch(() => recordedRef.current.delete(item.id));
     }
     return () => stopRef.current();
   }, [openIndex, items, play]);
+
+  // Warm the next 5 items in the background: GET /sentences seeds (generates) the
+  // first sentence + its audio server-side, so they're already cached when the
+  // learner gets there. Fire-and-forget; a failure just clears the flag so a later
+  // visit retries.
+  const PREFETCH_AHEAD = 5;
+  useEffect(() => {
+    if (openIndex == null || !items.length) return;
+    for (let n = 1; n <= PREFETCH_AHEAD && n < items.length; n += 1) {
+      const next = items[(openIndex + n) % items.length];
+      if (!next || prefetchedRef.current.has(next.id)) continue;
+      prefetchedRef.current.add(next.id);
+      getSentences(COURSE_ID, next.id).catch(() => prefetchedRef.current.delete(next.id));
+    }
+  }, [openIndex, items]);
 
   const open = (index) => setOpenIndex(index);
   const close = () => {
@@ -87,6 +106,7 @@ export default function Learn() {
         item={items[openIndex]}
         index={openIndex}
         total={items.length}
+        sentencesRef={sentencesRef}
         onPrev={() => move(-1)}
         onNext={() => move(1)}
         onReplay={() => play(items[openIndex])}
@@ -126,7 +146,7 @@ function Gallery({ items, onOpen }) {
   );
 }
 
-function CardView({ item, index, total, onPrev, onNext, onReplay, onClose }) {
+function CardView({ item, index, total, sentencesRef, onPrev, onNext, onReplay, onClose }) {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-xl flex-col px-4 pb-8 pt-16">
       <div className="mb-4 flex items-center justify-between text-sm font-medium text-slate-500">
@@ -155,30 +175,14 @@ function CardView({ item, index, total, onPrev, onNext, onReplay, onClose }) {
           >
             🔊
           </button>
-          {item.meaning && (
-            <div className="group relative">
-              <button
-                type="button"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-base text-amber-700 shadow-sm ring-1 ring-amber-200 transition hover:bg-amber-200"
-                aria-label="Show Hindi meaning"
-              >
-                अ
-              </button>
-              <div className="pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 whitespace-nowrap rounded-xl bg-amber-700 px-3 py-1.5 text-sm font-medium text-white opacity-0 shadow-lg transition-opacity duration-200 group-hover:opacity-100">
-                {item.meaning}
-                <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-amber-700" />
-              </div>
-            </div>
-          )}
         </div>
-        {item.sentence && (
-          <p className="mt-2 text-center text-slate-500">{item.sentence}</p>
-        )}
         {item.category && (
           <p className="mt-1 text-center text-xs font-semibold uppercase tracking-wide text-indigo-400">
             {item.category}
           </p>
         )}
+
+        <Sentences key={item.id} ref={sentencesRef} item={item} />
 
         <div className="mt-auto flex items-center justify-between gap-3 pt-6">
           <button

@@ -27,6 +27,12 @@ class AnswerCheck(BaseModel):
     normalized: str = Field(description="The expected answer in its canonical form")
 
 
+# --- Vocabulary sentences ---------------------------------------------------
+
+class AudioRequest(BaseModel):
+    kind: str = Field(description="Which clip to play: 'sentence', 'translation', or 'description'")
+
+
 # --- Auth -------------------------------------------------------------------
 
 class RegisterRequest(BaseModel):

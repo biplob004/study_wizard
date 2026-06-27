@@ -57,6 +57,13 @@ def _mount_course_static() -> None:
                 StaticFiles(directory=course.audio_dir),
                 name=f"{course.id}-audio",
             )
+        for subpath, directory in course.extra_static.items():
+            directory.mkdir(parents=True, exist_ok=True)
+            app.mount(
+                f"/static/courses/{course.id}/{subpath}",
+                StaticFiles(directory=directory),
+                name=f"{course.id}-{subpath}",
+            )
 
 
 # Shared routers.

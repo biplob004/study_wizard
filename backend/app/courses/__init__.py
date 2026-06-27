@@ -58,6 +58,11 @@ class Course:
     images_dir: Path | None = None
     audio_dir: Path | None = None
 
+    # Extra static directories, mapped subpath -> directory. main.py mounts each at
+    # /static/courses/{id}/{subpath}. Use for course-specific media beyond the
+    # standard images/audio (e.g. generated per-sentence audio).
+    extra_static: dict[str, Path] = {}
+
     def catalog_entry(self) -> dict[str, Any]:
         """The shape consumed by the frontend course catalog."""
         return {

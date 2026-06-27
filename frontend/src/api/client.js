@@ -75,6 +75,32 @@ export function checkAnswer(courseId, { exerciseType, expected, sentence, userAn
   });
 }
 
+// --- Vocabulary sentences --------------------------------------------------
+// Example sentences are global: once generated (with audio) they're saved on the
+// server and reused for everyone. Generation/audio are gated behind auth.
+
+/** A word's sentences: { sentences: [{id, sentence, translation, description, sentenceAudio}], canGenerate }. */
+export function getSentences(courseId, wordId) {
+  return request(`/api/courses/${courseId}/sentences/${wordId}`);
+}
+
+/** Generate one more sentence for a word (server caps at 10); returns the new sentence. */
+export function generateSentence(courseId, wordId) {
+  return request(`/api/courses/${courseId}/sentences/${wordId}/generate`, {
+    method: "POST",
+    auth: true,
+  });
+}
+
+/** Get a clip's URL for a sentence, synthesizing + caching it on first request. */
+export function getSentenceAudio(courseId, wordId, sentenceId, kind) {
+  return request(`/api/courses/${courseId}/sentences/${wordId}/${sentenceId}/audio`, {
+    method: "POST",
+    auth: true,
+    body: { kind },
+  });
+}
+
 // --- Auth ------------------------------------------------------------------
 
 export function register({ email, password, displayName }) {
