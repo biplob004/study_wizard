@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import tempfile
 from typing import Any
 
 from .data import DATA_DIR
@@ -41,11 +42,36 @@ def _load() -> list[dict[str, Any]]:
 
 
 def _save(records: list[dict[str, Any]]) -> None:
-    """Persist all records atomically (temp file + os.replace) to avoid corruption."""
-    SENTENCES_FILE.parent.mkdir(parents=True, exist_ok=True)
-    tmp = SENTENCES_FILE.with_suffix(".json.tmp")
-    tmp.write_text(json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8")
-    os.replace(tmp, SENTENCES_FILE)
+    """Persist all records atomically (temp file + os.replace) to avoid corruption.
+
+    The temp file is created in the target directory and fsynced (the file *and* the
+    directory) before the rename, so the entry is durable by the time ``os.replace``
+    runs. Without this, a laggy/cached filesystem — e.g. a Docker bind mount whose
+    contents changed under a running container — could report the write as succeeding
+    yet fail the rename with FileNotFoundError. On any error the temp file is removed."""
+    directory = SENTENCES_FILE.parent
+    directory.mkdir(parents=True, exist_ok=True)
+    data = json.dumps(records, ensure_ascii=False, indent=2)
+
+    fd, tmp_name = tempfile.mkstemp(dir=directory, prefix=".sentences-", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(data)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp_name, SENTENCES_FILE)
+        # Make the rename itself durable so the new directory entry survives.
+        dir_fd = os.open(directory, os.O_RDONLY)
+        try:
+            os.fsync(dir_fd)
+        finally:
+            os.close(dir_fd)
+    except Exception:
+        try:
+            os.unlink(tmp_name)
+        except OSError:
+            pass
+        raise
 
 
 def list_for_word(word_id: str) -> list[dict[str, Any]]:
