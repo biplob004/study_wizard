@@ -49,12 +49,25 @@ export default function TaskTracker() {
 
   const firstRun = useRef(true);
   useEffect(() => {
+    // Never persist until the learner's data has actually loaded. Saving is a
+    // full replace on the server (DELETE + re-INSERT), so a single POST with an
+    // empty `data` array wipes every saved task. Gating only on a "skip the
+    // first render" ref was unsafe: under StrictMode (this app ships the Vite
+    // dev build) this effect runs twice on mount *while `state` is still the
+    // empty initial value*, before the async fetch resolves. The ref got
+    // consumed on the first pass, so the second pass scheduled a save of the
+    // empty state — and on a slow load that empty POST fired before the fetch
+    // returned, erasing the table. Gate on `loading` instead: while the fetch
+    // is in flight no save can be scheduled, and once it resolves `firstRun`
+    // skips the single render where the freshly loaded data lands so we don't
+    // immediately echo it back.
+    if (loading) return;
     if (firstRun.current) { firstRun.current = false; return; }
     clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => {
       saveTaskState(state.data).catch((e) => showToast("Save failed: " + e.message));
     }, 400);
-  }, [state]);
+  }, [state, loading]);
 
   function showToast(msg) {
     setToast(msg);
